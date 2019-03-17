@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="chart__graph_stroke">2dp</dimen>
+    <dimen name="chart__graph_height">320dp</dimen>
+    <dimen name="chart__preview_stroke">1dp</dimen>
+    <dimen name="chart__preview_offset">16dp</dimen>
+    <dimen name="chart__preview_height">40dp</dimen>
+</resources>

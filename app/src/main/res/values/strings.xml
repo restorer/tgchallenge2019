@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core__app_name">TgChallenge 2019</string>
+
+    <string name="statistics__toggle_night_mode">Toggle night mode</string>
+    <string name="statistics__read_chart_failed">Unable to read chart</string>
+</resources>

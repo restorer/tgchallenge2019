@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:icon="@drawable/statistics__toggle_night_mode"
+        android:id="@+id/toggle_night_mode"
+        android:title="@string/statistics__toggle_night_mode"
+        app:showAsAction="always" />
+
+</menu>
