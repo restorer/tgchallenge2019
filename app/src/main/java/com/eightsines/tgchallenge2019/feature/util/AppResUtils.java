@@ -6,11 +6,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public final class ResUtils {
+public final class AppResUtils {
     private static final int READ_BUFFER_SIZE = 1024;
     private static final String CHARSET_UTF_8 = "UTF-8";
 
-    private ResUtils() {
+    private AppResUtils() {
     }
 
     public static String readToString(Context context, @RawRes int resId) throws IOException {

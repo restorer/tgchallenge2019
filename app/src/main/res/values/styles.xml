@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="AppTheme"
-        parent="Theme.AppCompat.DayNight.NoActionBar">
-
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/core__background</item>
         <item name="colorPrimary">@color/core__primary</item>
         <item name="colorPrimaryDark">@color/core__primary_dark</item>
@@ -14,6 +12,7 @@
         <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
         <item name="android:minHeight">?attr/actionBarSize</item>
         <item name="android:background">?attr/colorPrimary</item>
+        <item tools:ignore="NewApi" name="android:elevation">4dp</item>
     </style>
 
 </resources>

@@ -1,9 +1,11 @@
-package com.eightsines.tgchallenge2019.feature.chart;
+package com.eightsines.tgchallenge2019.feature.chart.util;
 
 import android.graphics.Color;
+import androidx.annotation.NonNull;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
-import com.eightsines.tgchallenge2019.feature.chart.data.ChartXData;
-import com.eightsines.tgchallenge2019.feature.chart.data.ChartYData;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartXValues;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
+import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -22,7 +24,8 @@ public final class ChartReader {
     private ChartReader() {
     }
 
-    public static List<ChartData> readListFromJson(String jsonString) throws ChartException {
+    @NonNull
+    public static List<ChartData<Long, Integer>> readListFromJson(String jsonString) throws ChartException {
         try {
             return readListFromJson(new JSONArray(jsonString));
         } catch (JSONException e) {
@@ -30,8 +33,9 @@ public final class ChartReader {
         }
     }
 
-    public static List<ChartData> readListFromJson(JSONArray jsonArray) throws ChartException {
-        List<ChartData> result = new ArrayList<>();
+    @NonNull
+    public static List<ChartData<Long, Integer>> readListFromJson(JSONArray jsonArray) throws ChartException {
+        List<ChartData<Long, Integer>> result = new ArrayList<>();
 
         for (int index = 0, length = jsonArray.length(); index < length; index++) {
             try {
@@ -44,15 +48,16 @@ public final class ChartReader {
         return result;
     }
 
-    public static ChartData readDataFromJson(JSONObject chartObject) throws ChartException {
+    @NonNull
+    public static ChartData<Long, Integer> readDataFromJson(JSONObject chartObject) throws ChartException {
         try {
             JSONArray columnsArray = chartObject.getJSONArray(KEY_COLUMNS);
             JSONObject typesObject = chartObject.getJSONObject(KEY_TYPES);
             JSONObject namesObject = chartObject.getJSONObject(KEY_NAMES);
             JSONObject colorsObject = chartObject.getJSONObject(KEY_COLORS);
 
-            long[] xValues = null;
-            List<ChartYData> yDataList = new ArrayList<>();
+            Long[] xValues = null;
+            List<ChartYValues<Integer>> yValuesList = new ArrayList<>();
 
             for (int columnIndex = 0, columnsLength = columnsArray.length();
                     columnIndex < columnsLength;
@@ -70,7 +75,7 @@ public final class ChartReader {
                             throw new ChartException("More than one x-column is not supported");
                         }
 
-                        xValues = new long[valuesLength - 1];
+                        xValues = new Long[valuesLength - 1];
 
                         for (int valueIndex = 1; valueIndex < valuesLength; valueIndex++) {
                             xValues[valueIndex - 1] = valuesArray.getLong(valueIndex);
@@ -80,15 +85,15 @@ public final class ChartReader {
                     }
 
                     case TYPE_LINE: {
-                        int[] yValues = new int[valuesLength - 1];
+                        Integer[] yValues = new Integer[valuesLength - 1];
 
                         for (int valueIndex = 1; valueIndex < valuesLength; valueIndex++) {
                             yValues[valueIndex - 1] = valuesArray.getInt(valueIndex);
                         }
 
-                        yDataList.add(new ChartYData(namesObject.getString(columnKey),
-                                parseColor(colorsObject.getString(columnKey)),
-                                yValues));
+                        yValuesList.add(new ChartYValues<>(yValues,
+                                namesObject.getString(columnKey),
+                                parseColor(colorsObject.getString(columnKey))));
 
                         break;
                     }
@@ -98,13 +103,13 @@ public final class ChartReader {
                 }
             }
 
-            return new ChartData(new ChartXData(xValues), yDataList);
+            return new ChartData<>(new ChartXValues<>(xValues), yValuesList);
         } catch (JSONException e) {
             throw new ChartException("Unable to parse chart data: " + e.toString(), e);
         }
     }
 
-    private static int parseColor(String colorString) throws ChartException {
+    private static int parseColor(@NonNull String colorString) throws ChartException {
         try {
             return Color.parseColor(colorString);
         } catch (IllegalArgumentException e) {

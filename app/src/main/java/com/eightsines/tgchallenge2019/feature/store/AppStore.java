@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AppStore {
-    private List<ChartData> charts = new ArrayList<>();
+    private List<ChartData<Long, Integer>> charts = new ArrayList<>();
 
     @NonNull
-    public List<ChartData> getCharts() {
+    public List<ChartData<Long, Integer>> getCharts() {
         return charts;
     }
 
-    public void setCharts(@NonNull List<ChartData> charts) {
+    public void setCharts(@NonNull List<ChartData<Long, Integer>> charts) {
         this.charts = charts;
     }
 }

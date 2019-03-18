@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <dimen name="chart__elevation">4dp</dimen>
+    <dimen name="chart__padding">16dp</dimen>
+    <dimen name="chart__checklist_offset">16dp</dimen>
+    <dimen name="chart__checkbox_text_offset">16dp</dimen>
+    <dimen name="chart__graph_labels_height">16dp</dimen>
+    <dimen name="chart__graph_label_text">12dp</dimen> <!-- in dp instead of sp on purpose -->
+    <dimen name="chart__graph_label_offset">4dp</dimen>
+    <dimen name="chart__graph_height">300dp</dimen>
+    <dimen name="chart__graph_offset">16dp</dimen>
     <dimen name="chart__graph_stroke">2dp</dimen>
-    <dimen name="chart__graph_height">320dp</dimen>
-    <dimen name="chart__preview_stroke">1dp</dimen>
-    <dimen name="chart__preview_offset">16dp</dimen>
+    <dimen name="chart__graph_axis">1dp</dimen>
     <dimen name="chart__preview_height">40dp</dimen>
+    <dimen name="chart__preview_offset">16dp</dimen>
+    <dimen name="chart__preview_stroke">1dp</dimen>
+    <dimen name="chart__preview_frame_border">1dp</dimen>
+    <dimen name="chart__preview_frame_handle">4dp</dimen>
 </resources>

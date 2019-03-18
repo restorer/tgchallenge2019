@@ -10,9 +10,20 @@
         android:layout_width="match_parent"
         style="@style/AppToolbar" />
 
-    <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
-        android:id="@+id/chart_graph"
-        android:layout_height="@dimen/chart__graph_height"
-        android:layout_width="match_parent" />
+    <ScrollView
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_width="match_parent">
 
+        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent">
+
+            <com.eightsines.tgchallenge2019.feature.chart.widget.ChartView
+                android:id="@+id/chart"
+                android:layout_height="match_parent"
+                android:layout_width="wrap_content" />
+
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

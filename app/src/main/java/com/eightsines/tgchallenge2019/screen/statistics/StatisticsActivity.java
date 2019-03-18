@@ -1,5 +1,6 @@
 package com.eightsines.tgchallenge2019.screen.statistics;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -12,18 +13,19 @@ import androidx.appcompat.widget.Toolbar;
 import com.eightsines.tgchallenge2019.App;
 import com.eightsines.tgchallenge2019.AppConfig;
 import com.eightsines.tgchallenge2019.R;
-import com.eightsines.tgchallenge2019.feature.chart.ChartException;
-import com.eightsines.tgchallenge2019.feature.chart.ChartReader;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
-import com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView;
+import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
+import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartReader;
+import com.eightsines.tgchallenge2019.feature.chart.widget.ChartView;
 import com.eightsines.tgchallenge2019.feature.preferences.AppPreferences;
-import com.eightsines.tgchallenge2019.feature.util.ResUtils;
+import com.eightsines.tgchallenge2019.feature.util.AppResUtils;
 import java.io.IOException;
 import java.util.List;
 
 public class StatisticsActivity extends AppCompatActivity {
     private AppPreferences preferences;
-    private ChartGraphView chartGraphView;
+    private ChartView chartView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,21 +38,20 @@ public class StatisticsActivity extends AppCompatActivity {
         updateTheme();
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onStart() {
         super.onStart();
 
-        chartGraphView = findViewById(R.id.chart_graph);
-
-        List<ChartData> charts = getCharts();
+        chartView = findViewById(R.id.chart);
+        List<ChartData<Long, Integer>> charts = getCharts();
 
         if (!charts.isEmpty()) {
-            ChartData chartData = charts.get(0);
-
-            chartGraphView.setStrokeWidth(getResources().getDimensionPixelSize(R.dimen.chart__graph_stroke))
-                    .setXAxisRange(chartData.getXData().getRange())
-                    .setYAxisRange(chartData.computeYRange(0, chartData.getXData().getMaxIndex(), 50))
-                    .setChartData(chartData);
+            try {
+                chartView.setChart("Followers", charts.get(0));
+            } catch (ChartOutOfBoundsException ignored) {
+                // ignored
+            }
         }
     }
 
@@ -83,15 +84,15 @@ public class StatisticsActivity extends AppCompatActivity {
                 : AppCompatDelegate.MODE_NIGHT_NO);
     }
 
-    private List<ChartData> getCharts() {
-        List<ChartData> charts = App.getInstance().getStore().getCharts();
+    private List<ChartData<Long, Integer>> getCharts() {
+        List<ChartData<Long, Integer>> charts = App.getInstance().getStore().getCharts();
 
         if (!charts.isEmpty()) {
             return charts;
         }
 
         try {
-            charts = ChartReader.readListFromJson(ResUtils.readToString(this, R.raw.chart_data));
+            charts = ChartReader.readListFromJson(AppResUtils.readToString(this, R.raw.chart_data));
         } catch (ChartException | IOException e) {
             Log.e(AppConfig.TAG, "Unable to read chart: " + e.toString(), e);
             Toast.makeText(this, R.string.statistics__read_chart_failed, Toast.LENGTH_LONG).show();

@@ -1,66 +1,53 @@
 package com.eightsines.tgchallenge2019.feature.chart.data;
 
 import androidx.annotation.NonNull;
-import com.eightsines.tgchallenge2019.feature.chart.ChartException;
+import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
+import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 import java.util.List;
 
-public class ChartData {
-    private ChartXData xData;
-    private List<ChartYData> yDataList;
+public class ChartData<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> {
+    private ChartXValues<X> xValues;
+    private List<ChartYValues<Y>> yValuesList;
 
-    public ChartData(@NonNull ChartXData xData, @NonNull List<ChartYData> yDataList) throws ChartException {
-        this.xData = xData;
-        this.yDataList = yDataList;
+    public ChartData(@NonNull ChartXValues<X> xValues, @NonNull List<ChartYValues<Y>> yValuesList) throws
+            ChartException {
+
+        this.xValues = xValues;
+        this.yValuesList = yValuesList;
 
         initialize();
     }
 
     @NonNull
-    public ChartXData getXData() {
-        return xData;
-    }
-
-    public int getYDataCount() {
-        return yDataList.size();
+    public ChartXValues<X> getXValues() {
+        return xValues;
     }
 
     @NonNull
-    public ChartYData getYData(int position) {
-        return yDataList.get(position);
+    public List<ChartYValues<Y>> getYValuesList() {
+        return yValuesList;
+    }
+
+    public boolean isEmpty() {
+        return xValues.isEmpty() || yValuesList.isEmpty();
     }
 
     @NonNull
-    public ChartRange<Integer> computeYRange(int fromIndex, int toIndex, int expandStep) {
-        ChartRange<Integer> result = null;
-
-        for (ChartYData yData : yDataList) {
-            if (!yData.isEnabled()) {
-                continue;
-            }
-
-            ChartRange<Integer> range = yData.computeRange(fromIndex, toIndex, expandStep);
-
-            if (result == null) {
-                result = range;
-            } else {
-                result = result.mergeWith(range);
-            }
-        }
-
-        return result == null ? new ChartRange<>(0, 0) : result;
+    public ChartRange<X> getXRange() throws ChartOutOfBoundsException {
+        return xValues.getRange();
     }
 
     private void initialize() throws ChartException {
-        int maxIndex = xData.getMaxIndex();
+        int xLength = xValues.getLength();
 
-        for (ChartYData yData : yDataList) {
-            if (yData.getMaxIndex() != maxIndex) {
-                throw new ChartException("Values count in all columns must be equal");
+        for (ChartYValues<Y> yValues : yValuesList) {
+            if (yValues.getLength() != xLength) {
+                throw new ChartException("Values length in all columns must be equal");
             }
         }
 
-        if (!xData.isEmpty()) {
-            sortData(0, xData.getMaxIndex());
+        if (!xValues.isEmpty()) {
+            sortData(0, xValues.getMaxIndex());
         }
     }
 
@@ -69,11 +56,11 @@ public class ChartData {
             return;
         }
 
-        long pivot = xData.values[toIndex];
+        X pivot = xValues.values[toIndex];
         int partitionIndex = fromIndex - 1;
 
         for (int index = fromIndex; index < toIndex; index++) {
-            if (xData.values[index] > pivot) {
+            if (xValues.values[index].compareTo(pivot) > 0) {
                 continue;
             }
 
@@ -88,14 +75,14 @@ public class ChartData {
     }
 
     private void swapData(int fromIndex, int toIndex) {
-        long tmpX = xData.values[fromIndex];
-        xData.values[fromIndex] = xData.values[toIndex];
-        xData.values[toIndex] = tmpX;
+        X tmpX = xValues.values[fromIndex];
+        xValues.values[fromIndex] = xValues.values[toIndex];
+        xValues.values[toIndex] = tmpX;
 
-        for (ChartYData yData : yDataList) {
-            int tmpY = yData.values[fromIndex];
-            yData.values[fromIndex] = yData.values[toIndex];
-            yData.values[toIndex] = tmpY;
+        for (ChartYValues<Y> yValues : yValuesList) {
+            Y tmpY = yValues.values[fromIndex];
+            yValues.values[fromIndex] = yValues.values[toIndex];
+            yValues.values[toIndex] = tmpY;
         }
     }
 }

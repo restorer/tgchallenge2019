@@ -1,4 +1,4 @@
-package com.eightsines.tgchallenge2019.feature.chart;
+package com.eightsines.tgchallenge2019.feature.chart.exception;
 
 public class ChartException extends Exception {
     public ChartException(String message) {

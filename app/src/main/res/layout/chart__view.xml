@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:orientation="vertical"
+    tools:padding="@dimen/chart__padding"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/title"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:textColor="?attr/colorAccent"
+        tools:text="Followers" />
+
+    <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
+        android:id="@+id/graph"
+        android:layout_height="@dimen/chart__graph_height"
+        android:layout_marginTop="@dimen/chart__graph_offset"
+        android:layout_width="match_parent" />
+
+    <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
+        android:id="@+id/preview"
+        android:layout_height="@dimen/chart__preview_height"
+        android:layout_marginTop="@dimen/chart__preview_offset"
+        android:layout_width="match_parent" />
+
+</merge>
