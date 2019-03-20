@@ -42,9 +42,14 @@ public class StatisticsActivity extends AppCompatActivity {
         updateTheme();
         List<ChartData<Long, Integer>> charts = getCharts();
 
+        /*
         for (int index = 0, length = charts.size(); index < length; index++) {
             appendTgChartView(index, charts.get(index));
         }
+        */
+
+        appendTgChartView(0, charts.get(0));
+        // appendTgChartView(2, charts.get(2));
     }
 
     @Override
