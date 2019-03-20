@@ -74,10 +74,6 @@ public class ChartLabelsController<T extends Number & Comparable<T>> {
             return title;
         }
 
-        public float getAlpha() {
-            return alpha;
-        }
-
         @SuppressWarnings("MagicNumber")
         public int getIntAlpha() {
             return (int)(alpha * 255.0f + 0.5f);
@@ -104,6 +100,7 @@ public class ChartLabelsController<T extends Number & Comparable<T>> {
     private Function<T, String> labelsFormatter;
     private Function<ChartRange<T>, List<T>> labelsValuesComputer;
     private Map<String, Label> labelsMap = new HashMap<>();
+    private ChartRange<T> lastRange;
     private Runnable onUpdatedListener;
 
     public ChartLabelsController(@NonNull Function<T, String> labelsFormatter,
@@ -123,7 +120,15 @@ public class ChartLabelsController<T extends Number & Comparable<T>> {
         return labelsMap.values();
     }
 
-    public void updateRange(ChartRange<T> range, long animationDuration) {
+    public void updateRange(@NonNull ChartRange<T> range, long animationDuration) {
+        if (lastRange == null) {
+            lastRange = new ChartRange<>(range);
+        } else if (lastRange.equals(range)) {
+            return;
+        } else {
+            lastRange.setRange(range.getFrom(), range.getTo());
+        }
+
         Set<String> activeNameSet = new HashSet<>();
 
         for (T value : labelsValuesComputer.apply(range)) {

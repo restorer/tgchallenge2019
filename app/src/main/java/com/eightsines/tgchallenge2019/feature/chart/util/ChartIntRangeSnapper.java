@@ -5,6 +5,8 @@ import androidx.core.util.Consumer;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
 
 public class ChartIntRangeSnapper implements Consumer<ChartRange<Integer>> {
+    private static final int SUBDIVISIONS = 6;
+
     private int snap;
     private int offset;
 
@@ -19,8 +21,11 @@ public class ChartIntRangeSnapper implements Consumer<ChartRange<Integer>> {
 
     @Override
     public void accept(@NonNull ChartRange<Integer> range) {
-        range.setRange(snapLower(range.getFrom() - offset, snap),
-                snapUpper(range.getTo() + offset, snap));
+        int lower = snapLower(range.getFrom() - offset, snap);
+        int last = snapUpper(lower + (range.getTo() + offset - lower) / SUBDIVISIONS * (SUBDIVISIONS - 1), snap);
+        int upper = (last - lower) / (SUBDIVISIONS - 1) * SUBDIVISIONS;
+
+        range.setRange(lower, upper);
     }
 
     private static int snapLower(int value, int snap) {

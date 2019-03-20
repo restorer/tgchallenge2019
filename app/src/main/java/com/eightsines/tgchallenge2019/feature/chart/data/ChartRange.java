@@ -19,10 +19,6 @@ public class ChartRange<T extends Number & Comparable<T>> {
         this.to = range.to;
     }
 
-    public boolean isEmpty() {
-        return to.compareTo(from) <= 0;
-    }
-
     @NonNull
     public T getFrom() {
         return from;
@@ -93,5 +89,11 @@ public class ChartRange<T extends Number & Comparable<T>> {
 
         ChartRange<?> lhs = (ChartRange<?>)o;
         return Objects.equals(from, lhs.from) && Objects.equals(to, lhs.to);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "ChartRange(from=" + String.valueOf(from) + ", to=" + String.valueOf(to) + ")";
     }
 }

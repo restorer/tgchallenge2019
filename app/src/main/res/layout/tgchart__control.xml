@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:orientation="vertical"
     tools:padding="@dimen/chart__padding"
@@ -9,15 +10,102 @@
         android:id="@+id/title"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="?attr/colorAccent"
+        android:textSize="@dimen/chart__title_text"
+        app:fontFamily="sans-serif-medium"
         tools:text="Followers" />
 
-    <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
-        android:id="@+id/graph"
+    <FrameLayout
         android:layout_height="@dimen/chart__graph_height"
         android:layout_marginTop="@dimen/chart__graph_offset"
-        android:layout_width="match_parent" />
+        android:layout_width="match_parent">
+
+        <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
+            android:id="@+id/graph"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent" />
+
+        <LinearLayout
+            android:background="@drawable/tgchart__info_background"
+            android:elevation="@dimen/chart__info_elevation"
+            android:id="@+id/info_container"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/chart__info_padding_vertical"
+            android:paddingLeft="@dimen/chart__info_padding_horizontal"
+            android:paddingRight="@dimen/chart__info_padding_horizontal"
+            android:paddingTop="@dimen/chart__info_padding_vertical"
+            android:visibility="gone"
+            tools:ignore="UnusedAttribute">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/info_title"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/chart__info_title_offset"
+                android:layout_width="wrap_content"
+                android:textSize="@dimen/chart__info_title_text"
+                app:fontFamily="sans-serif-medium"
+                tools:text="Sat, Feb 24" />
+
+            <LinearLayout
+                android:id="@+id/info_data_container"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:orientation="horizontal">
+
+                <!--
+                <LinearLayout
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:orientation="vertical">
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:textSize="@dimen/chart__info_value_text"
+                        app:fontFamily="sans-serif-medium"
+                        tools:text="122"
+                        tools:textColor="#76d672" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:textSize="@dimen/chart__info_label_text"
+                        app:fontFamily="sans-serif-medium"
+                        tools:text="Joined"
+                        tools:textColor="#76d672" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/chart__info_series_offset"
+                    android:layout_width="wrap_content"
+                    android:orientation="vertical">
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:textSize="@dimen/chart__info_value_text"
+                        app:fontFamily="sans-serif-medium"
+                        tools:text="67"
+                        tools:textColor="#ed685f" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:textSize="@dimen/chart__info_label_text"
+                        app:fontFamily="sans-serif-medium"
+                        tools:text="Left"
+                        tools:textColor="#ed685f" />
+
+                </LinearLayout>
+                -->
+
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
 
     <com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView
         android:id="@+id/preview"

@@ -12,10 +12,11 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
     private static final String PROP_FROM = "PROP_FROM";
     private static final String PROP_TO = "PROP_TO";
 
-    private ChartRange<T> range;
+    private ChartRange<T> controlledRange;
     private TypeEvaluator<T> evaluator;
     private ValueAnimator animator;
     private Runnable onUpdatedListener;
+    private ChartRange<T> lastRange;
 
     private Animator.AnimatorListener animatorListener = new Animator.AnimatorListener() {
         @Override
@@ -40,7 +41,7 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
         @SuppressWarnings("unchecked")
         @Override
         public void onAnimationUpdate(ValueAnimator animation) {
-            range.setRange((T)animation.getAnimatedValue(PROP_FROM),
+            controlledRange.setRange((T)animation.getAnimatedValue(PROP_FROM),
                     (T)animation.getAnimatedValue(PROP_TO));
 
             if (onUpdatedListener != null) {
@@ -49,14 +50,18 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
         }
     };
 
-    public ChartRangeController(@NonNull ChartRange<T> range, @NonNull TypeEvaluator<T> evaluator) {
-        this.range = range;
+    public ChartRangeController(@NonNull ChartRange<T> controlledRange, @NonNull TypeEvaluator<T> evaluator) {
+        this.controlledRange = controlledRange;
         this.evaluator = evaluator;
     }
 
     public void setRange(@NonNull ChartRange<T> range, long animationDuration) {
-        if (this.range.equals(range)) {
+        if (lastRange == null) {
+            lastRange = new ChartRange<>(range);
+        } else if (lastRange.equals(range)) {
             return;
+        } else {
+            lastRange.setRange(range.getFrom(), range.getTo());
         }
 
         if (animator != null) {
@@ -64,8 +69,8 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
         }
 
         animator = ValueAnimator.ofPropertyValuesHolder(
-                PropertyValuesHolder.ofObject(PROP_FROM, evaluator, this.range.getFrom(), range.getFrom()),
-                PropertyValuesHolder.ofObject(PROP_TO, evaluator, this.range.getTo(), range.getTo()));
+                PropertyValuesHolder.ofObject(PROP_FROM, evaluator, controlledRange.getFrom(), range.getFrom()),
+                PropertyValuesHolder.ofObject(PROP_TO, evaluator, controlledRange.getTo(), range.getTo()));
 
         animator.setDuration(animationDuration);
         animator.addListener(animatorListener);

@@ -31,7 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TgChartControlView extends LinearLayout {
-    private static final long INITIAL_RANGE_EXPAND_MS = AppTimeUtils.WEEK_MS * 5L;
+    private static final long VIEW_RANGE_MIN = AppTimeUtils.WEEK_MS * 2L;
+    private static final long VIEW_RANGE_INITIAL = AppTimeUtils.ABOUT_MONTH_MS;
 
     private TextView titleView;
     private ChartGraphView<Long, Integer> graphView;
@@ -122,16 +123,19 @@ public class TgChartControlView extends LinearLayout {
             return;
         }
 
+        ChartDateLabelsValuesComputer xLabelsValuesComputer = new ChartDateLabelsValuesComputer();
+
         controller = new ChartController<>(chartData,
-                new ChartDateLabelsFormatter(),
-                new ChartDateLabelsValuesComputer(),
+                new ChartDateLabelsFormatter(xLabelsValuesComputer),
+                xLabelsValuesComputer,
                 new ChartIntLabelsFormatter(),
                 new ChartIntLabelsValuesComputer(),
-                new ChartIntRangeSnapper(10));
+                new ChartIntRangeSnapper(10),
+                VIEW_RANGE_MIN);
 
         controller.getXVisibleRange().setFrom(
                 Math.max(controller.getXFullRange().getFrom(),
-                        controller.getXFullRange().getTo() - INITIAL_RANGE_EXPAND_MS));
+                        controller.getXFullRange().getTo() - VIEW_RANGE_INITIAL));
 
         graphView.setController(false, controller, chartData);
         previewView.setController(true, controller, chartData);

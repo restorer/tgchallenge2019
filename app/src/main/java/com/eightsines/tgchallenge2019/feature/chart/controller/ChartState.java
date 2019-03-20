@@ -10,16 +10,20 @@ public class ChartState extends AbsSavedState {
     private Number xVisibleRangeFrom;
     private Number xVisibleRangeTo;
     private boolean[] yValuesEnabledList;
+    private int selectedIndex;
 
     public ChartState(@Nullable Parcelable superState,
             @NonNull Number xVisibleRangeFrom,
             @NonNull Number xVisibleRangeTo,
-            @NonNull boolean[] yValuesEnabledList) {
+            @NonNull boolean[] yValuesEnabledList,
+            int selectedIndex) {
 
         super(superState == null ? EMPTY_STATE : superState);
+
         this.xVisibleRangeFrom = xVisibleRangeFrom;
         this.xVisibleRangeTo = xVisibleRangeTo;
         this.yValuesEnabledList = yValuesEnabledList;
+        this.selectedIndex = selectedIndex;
     }
 
     private ChartState(@NonNull Parcel source, @Nullable ClassLoader loader) {
@@ -28,6 +32,7 @@ public class ChartState extends AbsSavedState {
         xVisibleRangeFrom = (Number)source.readSerializable();
         xVisibleRangeTo = (Number)source.readSerializable();
         yValuesEnabledList = source.createBooleanArray();
+        selectedIndex = source.readInt();
     }
 
     public Number getXVisibleRangeFrom() {
@@ -42,6 +47,10 @@ public class ChartState extends AbsSavedState {
         return yValuesEnabledList;
     }
 
+    public int getSelectedIndex() {
+        return selectedIndex;
+    }
+
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         super.writeToParcel(dest, flags);
@@ -49,6 +58,7 @@ public class ChartState extends AbsSavedState {
         dest.writeSerializable(xVisibleRangeFrom);
         dest.writeSerializable(xVisibleRangeTo);
         dest.writeBooleanArray(yValuesEnabledList);
+        dest.writeInt(selectedIndex);
     }
 
     public static final Creator<ChartState> CREATOR = new ClassLoaderCreator<ChartState>() {

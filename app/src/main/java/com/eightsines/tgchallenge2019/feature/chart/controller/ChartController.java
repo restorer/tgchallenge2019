@@ -16,9 +16,13 @@ import java.util.Set;
 
 public class ChartController<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> {
     public interface Listener {
-        void onChartUpdated();
+        void onChartInvalidated();
+
+        void onChartVisibleRangeChanged();
 
         void onChartStateChanged();
+
+        void onChartSelectedIndexChanged();
     }
 
     private static final long DURATION_DEFAULT = 300L;
@@ -28,19 +32,30 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
     private Function<Y, String> yLabelsFormatter;
     private Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer;
     private Consumer<ChartRange<Y>> yRangeSnapper;
+    private X xMinVisibleRange;
     private long animationDuration = DURATION_DEFAULT;
     private ChartTypeDescriptor<X> xTypeDescriptor;
     private ChartTypeDescriptor<Y> yTypeDescriptor;
     private ChartRange<X> xFullRange;
     private ChartRange<X> xVisibleRange;
+    private int selectedIndex = -1;
     private List<ChartYValuesController> yValuesControllerList = new ArrayList<>();
     private Set<Listener> listenerSet = new HashSet<>();
 
-    @SuppressWarnings("FieldCanBeLocal") private Runnable internalOnUpdatedListener = new Runnable() {
+    @SuppressWarnings("FieldCanBeLocal") private Runnable onYValuesUpdatedListener = new Runnable() {
         @Override
         public void run() {
             for (Listener listener : listenerSet) {
-                listener.onChartUpdated();
+                listener.onChartInvalidated();
+            }
+        }
+    };
+
+    @SuppressWarnings("FieldCanBeLocal") private Runnable onXVisibleRangeUpdated = new Runnable() {
+        @Override
+        public void run() {
+            for (Listener listener : listenerSet) {
+                listener.onChartVisibleRangeChanged();
             }
         }
     };
@@ -50,24 +65,26 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
             Function<ChartRange<X>, List<X>> xLabelsValuesComputer,
             Function<Y, String> yLabelsFormatter,
             Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer,
-            Consumer<ChartRange<Y>> yRangeSnapper) {
+            Consumer<ChartRange<Y>> yRangeSnapper,
+            X xMinVisibleRange) {
 
         this.xLabelsFormatter = xLabelsFormatter;
         this.xLabelsValuesComputer = xLabelsValuesComputer;
         this.yLabelsFormatter = yLabelsFormatter;
         this.yLabelsValuesComputer = yLabelsValuesComputer;
         this.yRangeSnapper = yRangeSnapper;
+        this.xMinVisibleRange = xMinVisibleRange;
 
         xTypeDescriptor = chartData.getXTypeDescriptor();
         yTypeDescriptor = chartData.getYTypeDescriptor();
         xFullRange = chartData.getXFullRange();
 
         xVisibleRange = new ChartRange<>(xFullRange);
-        xVisibleRange.setOnUpdatedListener(internalOnUpdatedListener);
+        xVisibleRange.setOnUpdatedListener(onXVisibleRangeUpdated);
 
         for (ChartYValues<Y> yValues : chartData.getYValuesList()) {
             ChartYValuesController yValuesController = new ChartYValuesController(yValues.getColor());
-            yValuesController.setOnUpdatedListener(internalOnUpdatedListener);
+            yValuesController.setOnUpdatedListener(onYValuesUpdatedListener);
             yValuesControllerList.add(yValuesController);
         }
     }
@@ -96,6 +113,10 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         return yLabelsValuesComputer;
     }
 
+    public X getXMinVisibleRange() {
+        return xMinVisibleRange;
+    }
+
     public long getAnimationDuration() {
         return animationDuration;
     }
@@ -114,6 +135,18 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
 
     public ChartRange<X> getXVisibleRange() {
         return xVisibleRange;
+    }
+
+    public int getSelectedIndex() {
+        return selectedIndex;
+    }
+
+    public void setSelectedIndex(int selectedIndex) {
+        this.selectedIndex = selectedIndex;
+
+        for (Listener listener : listenerSet) {
+            listener.onChartSelectedIndexChanged();
+        }
     }
 
     public void addListener(Listener listener) {
@@ -188,7 +221,11 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
             yValuesEnabledList[position] = yValuesControllerList.get(position).isEnabled();
         }
 
-        return new ChartState(superState, xVisibleRange.getFrom(), xVisibleRange.getTo(), yValuesEnabledList);
+        return new ChartState(superState,
+                xVisibleRange.getFrom(),
+                xVisibleRange.getTo(),
+                yValuesEnabledList,
+                selectedIndex);
     }
 
     @SuppressWarnings("unchecked")
@@ -200,15 +237,21 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         ChartState chartState = (ChartState)state;
         xVisibleRange.setRange((X)chartState.getXVisibleRangeFrom(), (X)chartState.getXVisibleRangeTo());
 
-        for (int position = 0, count = Math.min(chartState.getYValuesEnabledList().length, yValuesControllerList.size());
+        for (int position = 0, count = Math.min(chartState.getYValuesEnabledList().length,
+                yValuesControllerList.size());
                 position < count;
                 position++) {
 
             yValuesControllerList.get(position).setEnabled(chartState.getYValuesEnabledList()[position], 0L);
         }
 
+        selectedIndex = chartState.getSelectedIndex();
+
         for (Listener listener : listenerSet) {
+            listener.onChartInvalidated();
+            listener.onChartVisibleRangeChanged();
             listener.onChartStateChanged();
+            listener.onChartSelectedIndexChanged();
         }
 
         return chartState.getSuperState();
