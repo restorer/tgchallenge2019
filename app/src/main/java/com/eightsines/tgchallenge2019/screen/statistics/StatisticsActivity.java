@@ -16,8 +16,8 @@ import com.eightsines.tgchallenge2019.R;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
 import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
-import com.eightsines.tgchallenge2019.feature.chart.util.ChartReader;
-import com.eightsines.tgchallenge2019.feature.chart.widget.ChartView;
+import com.eightsines.tgchallenge2019.feature.tgchart.TgChartReader;
+import com.eightsines.tgchallenge2019.feature.tgchart.TgChartControlView;
 import com.eightsines.tgchallenge2019.feature.preferences.AppPreferences;
 import com.eightsines.tgchallenge2019.feature.util.AppResUtils;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.List;
 
 public class StatisticsActivity extends AppCompatActivity {
     private AppPreferences preferences;
-    private ChartView chartView;
+    private TgChartControlView chartView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,7 +48,7 @@ public class StatisticsActivity extends AppCompatActivity {
 
         if (!charts.isEmpty()) {
             try {
-                chartView.setChart("Followers", charts.get(0));
+                chartView.setChartData("Followers", charts.get(0));
             } catch (ChartOutOfBoundsException ignored) {
                 // ignored
             }
@@ -92,7 +92,7 @@ public class StatisticsActivity extends AppCompatActivity {
         }
 
         try {
-            charts = ChartReader.readListFromJson(AppResUtils.readToString(this, R.raw.chart_data));
+            charts = TgChartReader.readListFromJson(AppResUtils.readToString(this, R.raw.chart_data));
         } catch (ChartException | IOException e) {
             Log.e(AppConfig.TAG, "Unable to read chart: " + e.toString(), e);
             Toast.makeText(this, R.string.statistics__read_chart_failed, Toast.LENGTH_LONG).show();

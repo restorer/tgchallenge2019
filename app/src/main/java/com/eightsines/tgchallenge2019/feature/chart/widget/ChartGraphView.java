@@ -10,44 +10,50 @@ import android.util.AttributeSet;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.arch.core.util.Function;
 import androidx.core.content.ContextCompat;
 import com.eightsines.tgchallenge2019.R;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartController;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartLabelsController;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartRangeController;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartYValuesController;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartXValues;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
-import com.eightsines.tgchallenge2019.feature.chart.render.ChartYValuesRenderer;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
 import com.eightsines.tgchallenge2019.feature.util.AppMathUtils;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> extends View {
+    private float chartXLabelsHeight;
+    private float chartYLabelOffset;
+    private float previewFrameBorderHeight;
+    private float previewFrameHandleWidth;
+    private Paint chartAxisLinePaint = new Paint();
+    private Paint chartLabelTextPaint = new Paint();
+    private Paint previewFramePaint = new Paint();
+    private Paint previewOverlayPaint = new Paint();
+    private Path previewFramePath = new Path();
+
+    private boolean preview;
+    private float strokeWidth;
+
+    private ChartController<X, Y> controller;
+    private ChartData<X, Y> chartData;
+    private ChartRange<X> xRange;
+    private ChartRange<Y> yRange;
+    private ChartRangeController<Y> yRangeController;
+    private ChartLabelsController<X> xLabelsController;
+    private ChartLabelsController<Y> yLabelsController;
+    private List<LineRenderer> lineRendererList = new ArrayList<>();
+
     private int viewWidth;
     private int viewHeight;
     private float viewRight;
     private float viewBottom;
-    private ChartController<X, Y> controller;
-    private boolean preview;
-    private ChartRange<X> xRange;
-    private ChartRangeController<Y> yRangeController;
-    private List<ChartYValuesRenderer<Y>> yValuesRendererList = new ArrayList<>();
-    private ChartLabelsController<X> xLabelsController;
-    private ChartLabelsController<Y> yLabelsController;
-    private ChartRange<X> xViewRange;
-    private int xLabelsHeight;
-    private float strokeWidth;
-    private float labelOffset;
-    private float previewFrameBorderHeight;
-    private float previewFrameHandleWidth;
-    private Paint axisLinePaint = new Paint();
-    private Paint labelTextPaint = new Paint();
-    private Paint previewFramePaint = new Paint();
-    private Paint previewOverlayPaint = new Paint();
-    private Path previewFramePath = new Path();
+
+    private RectF chartViewPort = new RectF();
+    private RectF renderViewPort = new RectF();
 
     private Runnable onUpdatedListener = new Runnable() {
         @Override
@@ -63,12 +69,8 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         }
 
         @Override
-        public void onChartYValuesStateChanged() {
-            try {
-                refreshYRange();
-            } catch (ChartOutOfBoundsException ignored) {
-                // ignored
-            }
+        public void onChartStateChanged() {
+            refreshYRange();
         }
     };
 
@@ -91,124 +93,107 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         Context context = getContext();
         Resources res = context.getResources();
 
-        axisLinePaint.setAntiAlias(true);
-        labelTextPaint.setAntiAlias(true);
-        previewFramePaint.setAntiAlias(true);
-        previewFramePaint.setStyle(Paint.Style.FILL);
-        previewOverlayPaint.setAntiAlias(true);
-
-        xLabelsHeight = res.getDimensionPixelSize(R.dimen.chart__graph_labels_height);
-        labelOffset = res.getDimensionPixelOffset(R.dimen.chart__graph_label_offset);
+        chartXLabelsHeight = res.getDimensionPixelSize(R.dimen.chart__graph_labels_height);
+        chartYLabelOffset = res.getDimensionPixelOffset(R.dimen.chart__graph_label_offset);
         previewFrameBorderHeight = res.getDimensionPixelSize(R.dimen.chart__preview_frame_border);
         previewFrameHandleWidth = res.getDimensionPixelSize(R.dimen.chart__preview_frame_handle);
 
-        axisLinePaint.setColor(ContextCompat.getColor(context, R.color.chart__axis_line));
-        axisLinePaint.setStrokeWidth(res.getDimensionPixelSize(R.dimen.chart__graph_axis));
-        labelTextPaint.setColor(ContextCompat.getColor(context, R.color.chart__label_text));
-        labelTextPaint.setTextSize(res.getDimensionPixelSize(R.dimen.chart__graph_label_text));
+        chartAxisLinePaint.setAntiAlias(true);
+        chartAxisLinePaint.setColor(ContextCompat.getColor(context, R.color.chart__axis_line));
+        chartAxisLinePaint.setStrokeWidth(res.getDimensionPixelSize(R.dimen.chart__graph_axis));
+
+        chartLabelTextPaint.setAntiAlias(true);
+        chartLabelTextPaint.setColor(ContextCompat.getColor(context, R.color.chart__label_text));
+        chartLabelTextPaint.setTextSize(res.getDimensionPixelSize(R.dimen.chart__graph_label_text));
+
+        previewFramePaint.setAntiAlias(true);
+        previewFramePaint.setStyle(Paint.Style.FILL);
         previewFramePaint.setColor(ContextCompat.getColor(context, R.color.chart__preview_frame));
+
+        previewOverlayPaint.setAntiAlias(true);
         previewOverlayPaint.setColor(ContextCompat.getColor(context, R.color.chart__preview_overlay));
-
-        updateRenderSettings();
     }
 
-    @Nullable
-    public ChartController<X, Y> getController() {
-        return controller;
-    }
-
-    public void setController(@Nullable ChartController<X, Y> controller,
-            @Nullable ChartRange<X> xRange,
-            @Nullable Function<X, String> xLabelsFormatter,
-            @Nullable Function<ChartRange<X>, List<X>> xLabelsValuesComputer,
-            @Nullable Function<Y, String> yLabelsFormatter,
-            @Nullable Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer) throws ChartOutOfBoundsException {
+    public void setController(boolean preview,
+            @Nullable ChartController<X, Y> controller,
+            @Nullable ChartData<X, Y> chartData) {
 
         if (this.controller != null) {
             this.controller.removeListener(chartListener);
+            this.controller = null;
+        }
+
+        this.chartData = null;
+        xRange = null;
+        yRange = null;
+
+        if (yRangeController != null) {
             yRangeController.setOnUpdatedListener(null);
-            yValuesRendererList.clear();
+            yRangeController = null;
+        }
+
+        if (xLabelsController != null) {
+            xLabelsController.setOnUpdatedListener(null);
+            xLabelsController = null;
+        }
+
+        if (yLabelsController != null) {
+            yLabelsController.setOnUpdatedListener(null);
+            yLabelsController = null;
+        }
+
+        lineRendererList.clear();
+        this.preview = preview;
+
+        strokeWidth = getContext().getResources().getDimensionPixelSize(preview
+                ? R.dimen.chart__preview_stroke
+                : R.dimen.chart__graph_stroke);
+
+        if (controller == null || chartData == null) {
+            invalidate();
+            return;
         }
 
         this.controller = controller;
-        this.xRange = xRange;
-        xLabelsController = null;
-        yLabelsController = null;
+        this.chartData = chartData;
 
-        if (controller != null && xRange != null) {
-            ChartRange<Y> yRange = controller.computeYRange(xRange.getFrom(), xRange.getTo());
-            yRangeController = new ChartRangeController<>(yRange, controller.getYTypeEvaluator());
+        xRange = preview ? controller.getXFullRange() : controller.getXVisibleRange();
+        yRange = controller.computeYRange(chartData, xRange);
+        yRangeController = new ChartRangeController<>(yRange, controller.getYTypeDescriptor().getTypeEvaluator());
 
-            for (ChartYValuesController<Y> yValuesController : controller.getYValuesControllerList()) {
-                yValuesRendererList.add(new ChartYValuesRenderer<>(yValuesController, strokeWidth));
-            }
+        if (!preview) {
+            xLabelsController = new ChartLabelsController<>(controller.getXLabelsFormatter(),
+                    controller.getXLabelsValuesComputer(),
+                    xRange);
 
-            controller.addListener(chartListener);
-            yRangeController.setOnUpdatedListener(onUpdatedListener);
+            yLabelsController = new ChartLabelsController<>(controller.getYLabelsFormatter(),
+                    controller.getYLabelsValuesComputer(),
+                    yRange);
+        }
 
-            if (xLabelsFormatter != null && xLabelsValuesComputer != null) {
-                xLabelsController = new ChartLabelsController<>(xLabelsFormatter, xLabelsValuesComputer, xRange);
-            }
+        for (int position = 0, count = chartData.getYValuesList().size(); position < count; position++) {
+            lineRendererList.add(new LineRenderer(chartData.getYValuesList().get(position),
+                    controller.getYValuesControllerList().get(position),
+                    strokeWidth));
+        }
 
-            if (yLabelsFormatter != null && yLabelsValuesComputer != null) {
-                yLabelsController = new ChartLabelsController<>(yLabelsFormatter, yLabelsValuesComputer, yRange);
-            }
+        controller.addListener(chartListener);
+        yRangeController.setOnUpdatedListener(onUpdatedListener);
+
+        if (!preview) {
+            xLabelsController.setOnUpdatedListener(onUpdatedListener);
+            yLabelsController.setOnUpdatedListener(onUpdatedListener);
         }
 
         invalidate();
     }
 
-    public boolean isPreview() {
-        return preview;
-    }
-
-    public void setPreview(boolean preview) {
-        this.preview = preview;
-        updateRenderSettings();
-
-        if (controller != null) {
-            invalidate();
-        }
-    }
-
-    public void setXRange(ChartRange<X> xRange) throws ChartOutOfBoundsException {
-        this.xRange = xRange;
-
-        if (controller != null) {
-            refreshYRange();
-            invalidate();
-        }
-    }
-
-    @Nullable
-    public ChartRange<X> getXViewRange() {
-        return xViewRange;
-    }
-
-    public void setXViewRange(@Nullable ChartRange<X> xViewRange) {
-        this.xViewRange = xViewRange;
-
-        if (controller != null) {
-            invalidate();
-        }
-    }
-
-    private void refreshYRange() throws ChartOutOfBoundsException {
-        ChartRange<Y> yRange = controller.computeYRange(xRange.getFrom(), xRange.getTo());
-        yRangeController.setRange(yRange, controller.getAnimationDuration());
+    private void refreshYRange() {
+        ChartRange<Y> newYRange = controller.computeYRange(chartData, xRange);
+        yRangeController.setRange(newYRange, controller.getAnimationDuration());
 
         if (yLabelsController != null) {
-            yLabelsController.updateRange(yRange, controller.getAnimationDuration());
-        }
-    }
-
-    private void updateRenderSettings() {
-        strokeWidth = getContext().getResources().getDimensionPixelSize(preview
-                ? R.dimen.chart__preview_stroke
-                : R.dimen.chart__graph_stroke);
-
-        for (ChartYValuesRenderer<Y> yValuesRenderer : yValuesRendererList) {
-            yValuesRenderer.setStrokeWidth(strokeWidth);
+            yLabelsController.updateRange(newYRange, controller.getAnimationDuration());
         }
     }
 
@@ -223,28 +208,20 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         viewBottom = viewHeight - 1.0f;
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         if (isInEditMode()
                 || viewWidth <= strokeWidth
                 || viewHeight < strokeWidth
                 || controller == null
-                || controller.getChartData().isEmpty()
-                || xRange.isEmpty()
-                || yRangeController.getRange().isEmpty()) {
+                || chartData == null
+                || chartData.isEmpty()) {
 
             return;
         }
 
-        try {
-            render(canvas);
-        } catch (ChartOutOfBoundsException ignored) {
-            // ignored
-        }
-    }
-
-    private void render(@NonNull Canvas canvas) throws ChartOutOfBoundsException {
-        ChartXValues<X> xValues = controller.getChartData().getXValues();
+        ChartXValues<X> xValues = chartData.getXValues();
 
         int fromIndex = xValues.computeIndexByValue(xRange.getFrom());
         int toIndex = xValues.computeIndexByValue(xRange.getTo());
@@ -253,139 +230,156 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             return;
         }
 
-        float xRangeFrom = xRange.getFrom().floatValue();
-        float xRangeLength = xRange.getTo().floatValue() - xRangeFrom;
-        float yRangeFrom = yRangeController.getRange().getFrom().floatValue();
-        float yRangeLength = yRangeController.getRange().getTo().floatValue() - yRangeFrom;
+        chartViewPort.set(
+                xRange.getFrom().floatValue(),
+                yRange.getFrom().floatValue(),
+                xRange.getTo().floatValue(),
+                yRange.getTo().floatValue());
 
-        if (xRangeLength < AppMathUtils.EPSILON_F || yRangeLength < AppMathUtils.EPSILON_F) {
+        if (chartViewPort.width() < AppMathUtils.EPSILON_F || chartViewPort.height() < AppMathUtils.EPSILON_F) {
             return;
         }
 
-        @SuppressWarnings("SuspiciousNameCombination")
-        RectF viewport = new RectF(0.0f,
+        renderViewPort.set(0.0f,
                 strokeWidth,
                 viewRight,
-                viewBottom - strokeWidth - (preview ? 0 : xLabelsHeight));
+                viewBottom - strokeWidth - (preview ? 0 : chartXLabelsHeight));
 
-        if (!preview && yLabelsController != null) {
-            renderYAxisLines(canvas, viewport, yRangeFrom, yRangeLength);
+        if (!preview) {
+            renderChartSubdivisions(canvas);
         }
 
-        for (ChartYValuesRenderer<Y> yValuesRenderer : yValuesRendererList) {
-            yValuesRenderer.startRender();
+        for (LineRenderer lineRenderer : lineRendererList) {
+            lineRenderer.startRender();
         }
 
         for (int index = fromIndex; index <= toIndex; index++) {
-            float x = (xValues.getValueAtIndex(index).floatValue() - xRangeFrom)
-                    / xRangeLength
-                    * viewport.width()
-                    + viewport.left;
+            float x = transformX(xValues.getValueAtIndex(index).floatValue());
 
-            for (ChartYValuesRenderer<Y> yValuesRenderer : yValuesRendererList) {
-                yValuesRenderer.appendPoint(index, x, viewport, yRangeFrom, yRangeLength);
+            for (LineRenderer lineRenderer : lineRendererList) {
+                lineRenderer.appendPoint(index, x);
             }
         }
 
-        for (ChartYValuesRenderer<Y> yValuesRenderer : yValuesRendererList) {
-            yValuesRenderer.finishRender(canvas);
+        for (LineRenderer lineRenderer : lineRendererList) {
+            lineRenderer.finishRender(canvas);
         }
 
         if (preview) {
-            renderViewWindow(canvas, viewport, xRangeFrom, xRangeLength);
+            renderPreviewFrame(canvas);
         } else {
-            renderLabels(canvas, viewport, xRangeFrom, xRangeLength, yRangeFrom, yRangeLength);
+            renderChartLabels(canvas);
         }
     }
 
-    private void renderYAxisLines(@NonNull Canvas canvas,
-            @NonNull RectF viewport,
-            float yRangeFrom,
-            float yRangeLength) {
+    private void renderChartSubdivisions(@NonNull Canvas canvas) {
+        for (ChartLabelsController<Y>.Label label : yLabelsController.getLabels()) {
+            float y = transformY(label.getValue().floatValue());
+
+            chartAxisLinePaint.setAlpha(label.getIntAlpha());
+            canvas.drawLine(0.0f, y, viewRight, y, chartAxisLinePaint);
+        }
+    }
+
+    @SuppressWarnings("MagicNumber")
+    private void renderChartLabels(@NonNull Canvas canvas) {
+        for (ChartLabelsController<X>.Label label : xLabelsController.getLabels()) {
+            float labelWidth = chartLabelTextPaint.measureText(label.getTitle());
+            chartLabelTextPaint.setAlpha(label.getIntAlpha());
+
+            canvas.drawText(label.getTitle(),
+                    transformX(label.getValue().floatValue()) - labelWidth * 0.5f,
+                    viewBottom,
+                    chartLabelTextPaint);
+        }
 
         for (ChartLabelsController<Y>.Label label : yLabelsController.getLabels()) {
-            float y = (1.0f - (label.getValue().floatValue() - yRangeFrom) / yRangeLength)
-                    * viewport.height()
-                    + viewport.top;
+            chartLabelTextPaint.setAlpha(label.getIntAlpha());
 
-            axisLinePaint.setAlpha(label.getIntAlpha());
-            canvas.drawLine(0.0f, y, viewRight, y, axisLinePaint);
+            canvas.drawText(label.getTitle(),
+                    0.0f,
+                    transformY(label.getValue().floatValue()) - chartYLabelOffset,
+                    chartLabelTextPaint);
         }
     }
 
-    private void renderLabels(@NonNull Canvas canvas,
-            @NonNull RectF viewport,
-            float xRangeFrom,
-            float xRangeLength,
-            float yRangeFrom,
-            float yRangeLength) {
+    private void renderPreviewFrame(@NonNull Canvas canvas) {
+        int xFrameFrom = (int)transformX(controller.getXVisibleRange().getFrom().floatValue());
+        int xFrameTo = (int)transformX(controller.getXVisibleRange().getTo().floatValue());
 
-        if (xLabelsController != null) {
-            for (ChartLabelsController<X>.Label label : xLabelsController.getLabels()) {
-                float labelWidth = labelTextPaint.measureText(label.getTitle());
-
-                @SuppressWarnings("MagicNumber")
-                float x = (label.getValue().floatValue() - xRangeFrom)
-                        / xRangeLength
-                        * viewport.width()
-                        + viewport.left
-                        - labelWidth * 0.5f;
-
-                labelTextPaint.setAlpha(label.getIntAlpha());
-                canvas.drawText(label.getTitle(), x, viewBottom, labelTextPaint);
-            }
-        }
-
-        if (yLabelsController != null) {
-            for (ChartLabelsController<Y>.Label label : yLabelsController.getLabels()) {
-                float y = (1.0f - (label.getValue().floatValue() - yRangeFrom) / yRangeLength)
-                        * viewport.height()
-                        + viewport.top;
-
-                labelTextPaint.setAlpha(label.getIntAlpha());
-                canvas.drawText(label.getTitle(), 0.0f, y - labelOffset, labelTextPaint);
-            }
-        }
-    }
-
-    private void renderViewWindow(@NonNull Canvas canvas,
-            @NonNull RectF viewport,
-            float xRangeFrom,
-            float xRangeLength) {
-
-        if (xViewRange == null) {
-            canvas.drawRect(0.0f, 0.0f, viewRight, viewBottom, previewOverlayPaint);
-            return;
-        }
-
-        int xViewFrom = (int)((xViewRange.getFrom().floatValue() - xRangeFrom)
-                / xRangeLength
-                * viewport.width()
-                + viewport.left);
-
-        int xViewTo = (int)((xViewRange.getTo().floatValue() - xRangeFrom)
-                / xRangeLength
-                * viewport.width()
-                + viewport.left);
-
-        canvas.drawRect(0.0f, 0.0f, xViewFrom - 1.0f, viewBottom, previewOverlayPaint);
-        canvas.drawRect(xViewTo + 1.0f, 0.0f, viewRight, viewBottom, previewOverlayPaint);
+        canvas.drawRect(0.0f, 0.0f, xFrameFrom - 1.0f, viewBottom, previewOverlayPaint);
+        canvas.drawRect(xFrameTo + 1.0f, 0.0f, viewRight, viewBottom, previewOverlayPaint);
 
         previewFramePath.rewind();
 
-        previewFramePath.moveTo(xViewFrom, 0.0f);
-        previewFramePath.lineTo(xViewTo, 0.0f);
-        previewFramePath.lineTo(xViewTo, viewBottom);
-        previewFramePath.lineTo(xViewFrom, viewBottom);
+        previewFramePath.moveTo(xFrameFrom, 0.0f);
+        previewFramePath.lineTo(xFrameTo, 0.0f);
+        previewFramePath.lineTo(xFrameTo, viewBottom);
+        previewFramePath.lineTo(xFrameFrom, viewBottom);
         previewFramePath.close();
 
-        previewFramePath.moveTo(xViewFrom + previewFrameHandleWidth, previewFrameBorderHeight);
-        previewFramePath.lineTo(xViewTo - previewFrameHandleWidth, previewFrameBorderHeight);
-        previewFramePath.lineTo(xViewTo - previewFrameHandleWidth, viewBottom - previewFrameBorderHeight);
-        previewFramePath.lineTo(xViewFrom + previewFrameHandleWidth, viewBottom - previewFrameBorderHeight);
+        previewFramePath.moveTo(xFrameFrom + previewFrameHandleWidth, previewFrameBorderHeight);
+        previewFramePath.lineTo(xFrameTo - previewFrameHandleWidth, previewFrameBorderHeight);
+        previewFramePath.lineTo(xFrameTo - previewFrameHandleWidth, viewBottom - previewFrameBorderHeight);
+        previewFramePath.lineTo(xFrameFrom + previewFrameHandleWidth, viewBottom - previewFrameBorderHeight);
         previewFramePath.close();
 
         previewFramePath.setFillType(Path.FillType.EVEN_ODD);
         canvas.drawPath(previewFramePath, previewFramePaint);
+    }
+
+    private float transformX(float chartX) {
+        return (chartX - chartViewPort.left) / chartViewPort.width() * renderViewPort.width() + renderViewPort.left;
+    }
+
+    private float transformY(float chartY) {
+        return (1.0f - (chartY - chartViewPort.top) / chartViewPort.height())
+                * renderViewPort.height()
+                + renderViewPort.top;
+    }
+
+    private class LineRenderer {
+        private ChartYValues<Y> yValues;
+        private ChartYValuesController yValuesController;
+        private Paint paint = new Paint();
+        private Path path = new Path();
+        private boolean hasNoPoints = true;
+
+        private LineRenderer(ChartYValues<Y> yValues, ChartYValuesController yValuesController, float strokeWidth) {
+            this.yValues = yValues;
+            this.yValuesController = yValuesController;
+
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeWidth(strokeWidth);
+        }
+
+        private void startRender() {
+            path.rewind();
+            hasNoPoints = true;
+        }
+
+        private void appendPoint(int index, float x) {
+            if (!yValuesController.isVisible()) {
+                return;
+            }
+
+            float y = transformY(yValues.getValueAtIndex(index).floatValue());
+
+            if (hasNoPoints) {
+                path.moveTo(x, y);
+                hasNoPoints = false;
+            } else {
+                path.lineTo(x, y);
+            }
+        }
+
+        private void finishRender(Canvas canvas) {
+            if (yValuesController.isVisible()) {
+                paint.setColor(yValuesController.getColor());
+                canvas.drawPath(path, paint);
+            }
+        }
     }
 }

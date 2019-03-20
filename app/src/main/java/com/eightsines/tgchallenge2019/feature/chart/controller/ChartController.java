@@ -1,12 +1,14 @@
 package com.eightsines.tgchallenge2019.feature.chart.controller;
 
-import android.animation.TypeEvaluator;
+import android.os.Parcelable;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
+import androidx.core.util.Consumer;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartTypeDescriptor;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,61 +17,83 @@ import java.util.Set;
 public class ChartController<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> {
     public interface Listener {
         void onChartUpdated();
-        void onChartYValuesStateChanged();
+
+        void onChartStateChanged();
     }
 
     private static final long DURATION_DEFAULT = 300L;
 
-    private ChartData<X, Y> chartData;
-    private TypeEvaluator<Y> yTypeEvaluator;
-    private Function<ChartRange<Y>, ChartRange<Y>> yRangeSnapper;
-    private List<ChartYValuesController<Y>> yValuesControllerList = new ArrayList<>();
-    private Set<Listener> chartListenerSet = new HashSet<>();
+    private Function<X, String> xLabelsFormatter;
+    private Function<ChartRange<X>, List<X>> xLabelsValuesComputer;
+    private Function<Y, String> yLabelsFormatter;
+    private Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer;
+    private Consumer<ChartRange<Y>> yRangeSnapper;
     private long animationDuration = DURATION_DEFAULT;
+    private ChartTypeDescriptor<X> xTypeDescriptor;
+    private ChartTypeDescriptor<Y> yTypeDescriptor;
+    private ChartRange<X> xFullRange;
+    private ChartRange<X> xVisibleRange;
+    private List<ChartYValuesController> yValuesControllerList = new ArrayList<>();
+    private Set<Listener> listenerSet = new HashSet<>();
 
-    private Runnable internalOnUpdatedListener = new Runnable() {
+    @SuppressWarnings("FieldCanBeLocal") private Runnable internalOnUpdatedListener = new Runnable() {
         @Override
         public void run() {
-            for (Listener listener : chartListenerSet) {
+            for (Listener listener : listenerSet) {
                 listener.onChartUpdated();
             }
         }
     };
 
     public ChartController(ChartData<X, Y> chartData,
-            TypeEvaluator<Y> yTypeEvaluator,
-            Function<ChartRange<Y>, ChartRange<Y>> yRangeSnapper) {
+            Function<X, String> xLabelsFormatter,
+            Function<ChartRange<X>, List<X>> xLabelsValuesComputer,
+            Function<Y, String> yLabelsFormatter,
+            Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer,
+            Consumer<ChartRange<Y>> yRangeSnapper) {
 
-        this.chartData = chartData;
-        this.yTypeEvaluator = yTypeEvaluator;
+        this.xLabelsFormatter = xLabelsFormatter;
+        this.xLabelsValuesComputer = xLabelsValuesComputer;
+        this.yLabelsFormatter = yLabelsFormatter;
+        this.yLabelsValuesComputer = yLabelsValuesComputer;
         this.yRangeSnapper = yRangeSnapper;
 
-        for (ChartYValues<Y> yValues : chartData.getYValuesList()) {
-            ChartYValuesController<Y> yValuesController = new ChartYValuesController<>(yValues);
-            yValuesController.setOnUpdatedListener(internalOnUpdatedListener);
+        xTypeDescriptor = chartData.getXTypeDescriptor();
+        yTypeDescriptor = chartData.getYTypeDescriptor();
+        xFullRange = chartData.getXFullRange();
 
+        xVisibleRange = new ChartRange<>(xFullRange);
+        xVisibleRange.setOnUpdatedListener(internalOnUpdatedListener);
+
+        for (ChartYValues<Y> yValues : chartData.getYValuesList()) {
+            ChartYValuesController yValuesController = new ChartYValuesController(yValues.getColor());
+            yValuesController.setOnUpdatedListener(internalOnUpdatedListener);
             yValuesControllerList.add(yValuesController);
         }
     }
 
-    public ChartData<X, Y> getChartData() {
-        return chartData;
+    public ChartTypeDescriptor<X> getXTypeDescriptor() {
+        return xTypeDescriptor;
     }
 
-    public TypeEvaluator<Y> getYTypeEvaluator() {
-        return yTypeEvaluator;
+    public ChartTypeDescriptor<Y> getYTypeDescriptor() {
+        return yTypeDescriptor;
     }
 
-    public List<ChartYValuesController<Y>> getYValuesControllerList() {
-        return yValuesControllerList;
+    public Function<X, String> getXLabelsFormatter() {
+        return xLabelsFormatter;
     }
 
-    public void addListener(Listener listener) {
-        chartListenerSet.add(listener);
+    public Function<ChartRange<X>, List<X>> getXLabelsValuesComputer() {
+        return xLabelsValuesComputer;
     }
 
-    public void removeListener(Listener listener) {
-        chartListenerSet.remove(listener);
+    public Function<Y, String> getYLabelsFormatter() {
+        return yLabelsFormatter;
+    }
+
+    public Function<ChartRange<Y>, List<Y>> getYLabelsValuesComputer() {
+        return yLabelsValuesComputer;
     }
 
     public long getAnimationDuration() {
@@ -80,16 +104,24 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         this.animationDuration = animationDuration;
     }
 
-    public int getYValuesCount() {
-        return yValuesControllerList.size();
+    public List<ChartYValuesController> getYValuesControllerList() {
+        return yValuesControllerList;
     }
 
-    public String getYValuesName(int position) {
-        return chartData.getYValuesList().get(position).getName();
+    public ChartRange<X> getXFullRange() {
+        return xFullRange;
     }
 
-    public int getYValuesColor(int position) {
-        return chartData.getYValuesList().get(position).getColor();
+    public ChartRange<X> getXVisibleRange() {
+        return xVisibleRange;
+    }
+
+    public void addListener(Listener listener) {
+        listenerSet.add(listener);
+    }
+
+    public void removeListener(Listener listener) {
+        listenerSet.remove(listener);
     }
 
     public boolean isYValuesEnabled(int position) {
@@ -97,30 +129,42 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
     }
 
     public void setYValuesEnabled(int position, boolean enabled) {
-        if (yValuesControllerList.get(position).isEnabled() == enabled) {
+        ChartYValuesController yValuesController = yValuesControllerList.get(position);
+
+        if (yValuesController.isEnabled() == enabled) {
             return;
         }
 
-        yValuesControllerList.get(position).setEnabled(enabled, animationDuration);
+        yValuesController.setEnabled(enabled, animationDuration);
 
-        for (Listener listener : chartListenerSet) {
-            listener.onChartYValuesStateChanged();
+        for (Listener listener : listenerSet) {
+            listener.onChartStateChanged();
         }
     }
 
+    public boolean hasOtherYValuesEnabled(int position) {
+        for (int otherPosition = 0, count = yValuesControllerList.size(); otherPosition < count; otherPosition++) {
+            if (position != otherPosition && yValuesControllerList.get(otherPosition).isEnabled()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @NonNull
-    public ChartRange<Y> computeYRange(X fromXValue, X toXValue) throws ChartOutOfBoundsException {
+    public ChartRange<Y> computeYRange(ChartData<X, Y> chartData, ChartRange<X> xRange) {
         ChartRange<Y> result = null;
 
-        int fromIndex = chartData.getXValues().computeIndexByValue(fromXValue);
-        int toIndex = chartData.getXValues().computeIndexByValue(toXValue);
+        int fromIndex = chartData.getXValues().computeIndexByValue(xRange.getFrom());
+        int toIndex = chartData.getXValues().computeIndexByValue(xRange.getTo());
 
-        for (ChartYValuesController<Y> yValuesController : yValuesControllerList) {
-            if (!yValuesController.isEnabled()) {
+        for (int position = 0, size = yValuesControllerList.size(); position < size; position++) {
+            if (!yValuesControllerList.get(position).isEnabled()) {
                 continue;
             }
 
-            ChartRange<Y> range = yValuesController.computeRange(fromIndex, toIndex);
+            ChartRange<Y> range = chartData.getYValuesList().get(position).computeRange(fromIndex, toIndex);
 
             if (result == null) {
                 result = range;
@@ -129,6 +173,48 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
             }
         }
 
-        return yRangeSnapper.apply(result);
+        if (result == null) {
+            result = new ChartRange<>(yTypeDescriptor.getEmptyValue(), yTypeDescriptor.getEmptyValue());
+        }
+
+        yRangeSnapper.accept(result);
+        return result;
+    }
+
+    private static final String KEY_RANGE_FROM = "KEY_RANGE_FROM";
+    private static final String KEY_RANGE_TO = "KEY_RANGE_TO";
+    private static final String KEY_YVALUES_ENABLED = "KEY_YVALUES_ENABLED";
+
+    public Parcelable onSaveInstanceState(@Nullable Parcelable superState) {
+        boolean[] yValuesEnabledList = new boolean[yValuesControllerList.size()];
+
+        for (int position = 0, count = yValuesControllerList.size(); position < count; position++) {
+            yValuesEnabledList[position] = yValuesControllerList.get(position).isEnabled();
+        }
+
+        return new ChartState(superState, xVisibleRange.getFrom(), xVisibleRange.getTo(), yValuesEnabledList);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Parcelable onRestoreInstanceState(@Nullable Parcelable state) {
+        if (!(state instanceof ChartState)) {
+            return state;
+        }
+
+        ChartState chartState = (ChartState)state;
+        xVisibleRange.setRange((X)chartState.getXVisibleRangeFrom(), (X)chartState.getXVisibleRangeTo());
+
+        for (int position = 0, count = Math.min(chartState.getYValuesEnabledList().length, yValuesControllerList.size());
+                position < count;
+                position++) {
+
+            yValuesControllerList.get(position).setEnabled(chartState.getYValuesEnabledList()[position], 0L);
+        }
+
+        for (Listener listener : listenerSet) {
+            listener.onChartStateChanged();
+        }
+
+        return chartState.getSuperState();
     }
 }

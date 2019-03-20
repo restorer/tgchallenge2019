@@ -2,14 +2,16 @@ package com.eightsines.tgchallenge2019.feature.chart.data;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 
-public class ChartValues<T extends Number & Comparable<T>> {
+@SuppressWarnings("AbstractClassWithoutAbstractMethods")
+public abstract class ChartValues<T extends Number & Comparable<T>> {
     protected T[] values;
+    protected T emptyValue;
 
-    public ChartValues(@Nullable T[] values) {
-        //noinspection unchecked
+    @SuppressWarnings("unchecked")
+    public ChartValues(@Nullable T[] values, @NonNull T emptyValue) {
         this.values = (values == null ? (T[])(new Object[0]) : values);
+        this.emptyValue = emptyValue;
     }
 
     public boolean isEmpty() {
@@ -20,16 +22,12 @@ public class ChartValues<T extends Number & Comparable<T>> {
         return values.length;
     }
 
-    public int getMaxIndex() {
-        return values.length - 1;
+    public T getEmptyValue() {
+        return emptyValue;
     }
 
     @NonNull
-    public T getValueAtIndex(int index) throws ChartOutOfBoundsException {
-        if (index < 0 || index >= values.length) {
-            throw new ChartOutOfBoundsException("Index " + index + " is out of bounds (length = " + values.length + ")");
-        }
-
-        return values[index];
+    public T getValueAtIndex(int index) {
+        return (index < 0 || index >= values.length) ? emptyValue : values[index];
     }
 }

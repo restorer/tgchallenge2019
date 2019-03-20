@@ -1,44 +1,78 @@
 package com.eightsines.tgchallenge2019.feature.chart.data;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.Objects;
 
 public class ChartRange<T extends Number & Comparable<T>> {
     private T from;
     private T to;
+    private Runnable onUpdatedListener;
 
     public ChartRange(@NonNull T from, @NonNull T to) {
         this.from = from;
         this.to = to;
     }
 
+    public ChartRange(@NonNull ChartRange<T> range) {
+        this.from = range.from;
+        this.to = range.to;
+    }
+
     public boolean isEmpty() {
         return to.compareTo(from) <= 0;
     }
 
+    @NonNull
     public T getFrom() {
         return from;
     }
 
-    public void setFrom(T from) {
+    public void setFrom(@NonNull T from) {
         this.from = from;
+
+        if (onUpdatedListener != null) {
+            onUpdatedListener.run();
+        }
     }
 
+    @NonNull
     public T getTo() {
         return to;
     }
 
-    public void setTo(T to) {
+    public void setTo(@NonNull T to) {
         this.to = to;
+
+        if (onUpdatedListener != null) {
+            onUpdatedListener.run();
+        }
     }
 
-    public void mergeWith(ChartRange<T> other) {
+    public void setRange(@NonNull T from, @NonNull T to) {
+        this.from = from;
+        this.to = to;
+
+        if (onUpdatedListener != null) {
+            onUpdatedListener.run();
+        }
+    }
+
+    public void setOnUpdatedListener(@Nullable Runnable onUpdatedListener) {
+        this.onUpdatedListener = onUpdatedListener;
+    }
+
+    public void mergeWith(@NonNull ChartRange<T> other) {
         if (from.compareTo(other.from) > 0) {
             from = other.from;
         }
 
         if (to.compareTo(other.to) < 0) {
             to = other.to;
+        }
+
+        if (onUpdatedListener != null) {
+            onUpdatedListener.run();
         }
     }
 

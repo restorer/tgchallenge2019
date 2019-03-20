@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class DateLabelsFormatter implements Function<Long, String> {
+public class ChartDateLabelsFormatter implements Function<Long, String> {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("MMM d", Locale.US);
 
     private Date dateCache = new Date();

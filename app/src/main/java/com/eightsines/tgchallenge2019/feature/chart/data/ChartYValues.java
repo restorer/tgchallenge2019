@@ -3,14 +3,13 @@ package com.eightsines.tgchallenge2019.feature.chart.data;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 
 public class ChartYValues<T extends Number & Comparable<T>> extends ChartValues<T> {
     private String name;
     private int color;
 
-    public ChartYValues(@Nullable T[] values, @NonNull String name, @ColorInt int color) {
-        super(values);
+    public ChartYValues(@Nullable T[] values, @NonNull T emptyValue, @NonNull String name, @ColorInt int color) {
+        super(values, emptyValue);
 
         this.name = name;
         this.color = color;
@@ -26,15 +25,9 @@ public class ChartYValues<T extends Number & Comparable<T>> extends ChartValues<
     }
 
     @NonNull
-    public ChartRange<T> computeRange(int fromIndex, int toIndex) throws ChartOutOfBoundsException {
+    public ChartRange<T> computeRange(int fromIndex, int toIndex) {
         if (fromIndex < 0 || toIndex < 0 || fromIndex >= values.length || toIndex >= values.length) {
-            throw new ChartOutOfBoundsException("Indices ("
-                    + fromIndex
-                    + " to "
-                    + toIndex
-                    + ") are out of range (0 until "
-                    + values.length
-                    + ")");
+            return new ChartRange<>(emptyValue, emptyValue);
         }
 
         T value = values[fromIndex];

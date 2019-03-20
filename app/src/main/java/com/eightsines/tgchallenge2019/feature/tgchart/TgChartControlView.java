@@ -1,4 +1,4 @@
-package com.eightsines.tgchallenge2019.feature.chart.widget;
+package com.eightsines.tgchallenge2019.feature.tgchart;
 
 import android.animation.IntEvaluator;
 import android.content.Context;
@@ -20,17 +20,17 @@ import com.eightsines.tgchallenge2019.R;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartController;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
-import com.eightsines.tgchallenge2019.feature.chart.util.DateLabelsFormatter;
-import com.eightsines.tgchallenge2019.feature.chart.util.DateLabelsValuesComputer;
-import com.eightsines.tgchallenge2019.feature.chart.util.IntLabelsFormatter;
-import com.eightsines.tgchallenge2019.feature.chart.util.IntLabelsValuesComputer;
-import com.eightsines.tgchallenge2019.feature.chart.util.IntRangeSnapper;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsFormatter;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsValuesComputer;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsFormatter;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsValuesComputer;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntRangeSnapper;
+import com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView;
 import com.eightsines.tgchallenge2019.feature.util.AppTimeUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ChartView extends LinearLayout {
+public class TgChartControlView extends LinearLayout {
     private static final long INITIAL_RANGE_EXPAND_MS = AppTimeUtils.WEEK_MS * 5L;
 
     private TextView titleView;
@@ -39,7 +39,7 @@ public class ChartView extends LinearLayout {
     private int checkListOffset;
     private int checkBoxTextOffset;
     private ChartController<Long, Integer> controller;
-    private List<AppCompatCheckBox> checkBoxList = new ArrayList<>();
+    private List<AppCompatCheckBox> checkBoxViewList = new ArrayList<>();
 
     private CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
@@ -48,43 +48,32 @@ public class ChartView extends LinearLayout {
                 return;
             }
 
-            int thisPosition = (Integer)buttonView.getTag();
+            int position = (Integer)buttonView.getTag();
 
-            if (controller.isYValuesEnabled(thisPosition) == isChecked) {
+            if (controller.isYValuesEnabled(position) == isChecked) {
                 return;
             }
 
-            if (!isChecked) {
-                boolean hasNoOtherEnabled = true;
-
-                for (int position = 0, count = controller.getYValuesCount(); position < count; position++) {
-                    if (position != thisPosition && controller.isYValuesEnabled(position)) {
-                        hasNoOtherEnabled = false;
-                        break;
-                    }
-                }
-
-                if (hasNoOtherEnabled) {
-                    buttonView.setChecked(true);
-                    return;
-                }
+            if (!isChecked && !controller.hasOtherYValuesEnabled(position)) {
+                buttonView.setChecked(true);
+                return;
             }
 
-            controller.setYValuesEnabled(thisPosition, isChecked);
+            controller.setYValuesEnabled(position, isChecked);
         }
     };
 
-    public ChartView(Context context) {
+    public TgChartControlView(Context context) {
         super(context);
         initialize();
     }
 
-    public ChartView(Context context, @Nullable AttributeSet attrs) {
+    public TgChartControlView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         initialize();
     }
 
-    public ChartView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public TgChartControlView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initialize();
     }
@@ -110,43 +99,36 @@ public class ChartView extends LinearLayout {
         titleView = rootView.findViewById(R.id.title);
         graphView = rootView.findViewById(R.id.graph);
         previewView = rootView.findViewById(R.id.preview);
-
-        previewView.setPreview(true);
     }
 
-    public void setChart(@NonNull String title, @NonNull ChartData<Long, Integer> data) throws
-            ChartOutOfBoundsException {
-
-        for (AppCompatCheckBox checkBox : checkBoxList) {
-            removeView(checkBox);
+    public void setChartData(@NonNull String title, @NonNull ChartData<Long, Integer> chartData) {
+        for (AppCompatCheckBox checkBoxView : checkBoxViewList) {
+            removeView(checkBoxView);
         }
 
-        checkBoxList.clear();
+        checkBoxViewList.clear();
         titleView.setText(title);
 
-        if (data.isEmpty()) {
+        if (chartData.isEmpty()) {
             controller = null;
-            graphView.setController(null, null, null, null, null, null);
-            previewView.setController(null, null, null, null, null, null);
+            graphView.setController(false, null, null);
+            previewView.setController(true, null, null);
             return;
         }
 
-        controller = new ChartController<>(data, new IntEvaluator(), new IntRangeSnapper(10));
-        ChartRange<Long> xFullRange = controller.getChartData().getXRange();
+        controller = new ChartController<>(chartData,
+                new ChartDateLabelsFormatter(),
+                new ChartDateLabelsValuesComputer(),
+                new ChartIntLabelsFormatter(),
+                new ChartIntLabelsValuesComputer(),
+                new ChartIntRangeSnapper(10));
 
-        ChartRange<Long> xViewRange = new ChartRange<>(
-                Math.max(xFullRange.getFrom(), xFullRange.getTo() - INITIAL_RANGE_EXPAND_MS),
-                xFullRange.getTo());
+        controller.getXVisibleRange().setFrom(
+                Math.max(controller.getXFullRange().getFrom(),
+                        controller.getXFullRange().getTo() - INITIAL_RANGE_EXPAND_MS));
 
-        graphView.setController(controller,
-                xViewRange,
-                new DateLabelsFormatter(),
-                new DateLabelsValuesComputer(),
-                new IntLabelsFormatter(),
-                new IntLabelsValuesComputer());
-
-        previewView.setController(controller, xFullRange, null, null, null, null);
-        previewView.setXViewRange(xViewRange);
+        graphView.setController(false, controller, chartData);
+        previewView.setController(true, controller, chartData);
 
         for (int position = 0, count = controller.getYValuesCount(); position < count; position++) {
             AppCompatCheckBox checkBox = new AppCompatCheckBox(getContext());
@@ -165,7 +147,7 @@ public class ChartView extends LinearLayout {
 
             checkBox.setOnCheckedChangeListener(onCheckedChangeListener);
 
-            checkBoxList.add(checkBox);
+            checkBoxViewList.add(checkBox);
             addView(checkBox);
         }
     }

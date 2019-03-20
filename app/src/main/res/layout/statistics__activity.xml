@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_width="match_parent">
 
-            <com.eightsines.tgchallenge2019.feature.chart.widget.ChartView
+            <com.eightsines.tgchallenge2019.feature.tgchart.TgChartControlView
                 android:id="@+id/chart"
                 android:layout_height="match_parent"
                 android:layout_width="wrap_content" />

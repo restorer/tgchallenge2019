@@ -4,15 +4,10 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.graphics.Color;
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
-import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 import com.eightsines.tgchallenge2019.feature.util.AppMathUtils;
 
-public class ChartYValuesController<T extends Number & Comparable<T>> {
-    private ChartYValues<T> yValues;
+public class ChartYValuesController {
     private int colorR;
     private int colorG;
     private int colorB;
@@ -51,21 +46,10 @@ public class ChartYValuesController<T extends Number & Comparable<T>> {
         }
     };
 
-    public ChartYValuesController(ChartYValues<T> yValues) {
-        this.yValues = yValues;
-
-        colorR = Color.red(yValues.getColor());
-        colorG = Color.green(yValues.getColor());
-        colorB = Color.blue(yValues.getColor());
-    }
-
-    public ChartYValues<T> getYValues() {
-        return yValues;
-    }
-
-    @NonNull
-    public String getName() {
-        return yValues.getName();
+    public ChartYValuesController(int color) {
+        colorR = Color.red(color);
+        colorG = Color.green(color);
+        colorB = Color.blue(color);
     }
 
     @SuppressWarnings("MagicNumber")
@@ -89,6 +73,16 @@ public class ChartYValuesController<T extends Number & Comparable<T>> {
             animator.cancel();
         }
 
+        if (animationDuration <= 0L) {
+            alpha = enabled ? 1.0f : 0.0f;
+
+            if (onUpdatedListener != null) {
+                onUpdatedListener.run();
+            }
+
+            return;
+        }
+
         animator = ValueAnimator.ofFloat(alpha, enabled ? 1.0f : 0.0f).setDuration(animationDuration);
         animator.addListener(animatorListener);
         animator.addUpdateListener(animatorUpdateListener);
@@ -101,9 +95,5 @@ public class ChartYValuesController<T extends Number & Comparable<T>> {
 
     public void setOnUpdatedListener(@Nullable Runnable onUpdatedListener) {
         this.onUpdatedListener = onUpdatedListener;
-    }
-
-    public ChartRange<T> computeRange(int fromIndex, int toIndex) throws ChartOutOfBoundsException {
-        return yValues.computeRange(fromIndex, toIndex);
     }
 }

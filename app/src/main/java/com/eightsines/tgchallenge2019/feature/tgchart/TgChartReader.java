@@ -1,4 +1,4 @@
-package com.eightsines.tgchallenge2019.feature.chart.util;
+package com.eightsines.tgchallenge2019.feature.tgchart;
 
 import android.graphics.Color;
 import androidx.annotation.NonNull;
@@ -12,7 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public final class ChartReader {
+public final class TgChartReader {
     private static final String KEY_COLUMNS = "columns";
     private static final String KEY_TYPES = "types";
     private static final String KEY_NAMES = "names";
@@ -21,7 +21,7 @@ public final class ChartReader {
     private static final String TYPE_X = "x";
     private static final String TYPE_LINE = "line";
 
-    private ChartReader() {
+    private TgChartReader() {
     }
 
     @NonNull
@@ -49,7 +49,7 @@ public final class ChartReader {
     }
 
     @NonNull
-    public static ChartData<Long, Integer> readDataFromJson(JSONObject chartObject) throws ChartException {
+    private static ChartData<Long, Integer> readDataFromJson(JSONObject chartObject) throws ChartException {
         try {
             JSONArray columnsArray = chartObject.getJSONArray(KEY_COLUMNS);
             JSONObject typesObject = chartObject.getJSONObject(KEY_TYPES);

@@ -1,24 +1,22 @@
 package com.eightsines.tgchallenge2019.feature.chart.data;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 
 public class ChartXValues<T extends Number & Comparable<T>> extends ChartValues<T> {
-    public ChartXValues(@Nullable T[] values) {
-        super(values);
+    public ChartXValues(@Nullable T[] values, @NonNull T emptyValue) {
+        super(values, emptyValue);
     }
 
-    public ChartRange<T> getRange() throws ChartOutOfBoundsException {
-        if (values.length == 0) {
-            throw new ChartOutOfBoundsException("Can't fill range because values are empty");
-        }
-
-        return new ChartRange<>(values[0], values[values.length - 1]);
+    public ChartRange<T> getFullRange() {
+        return (values.length == 0)
+                ? new ChartRange<>(emptyValue, emptyValue)
+                : new ChartRange<>(values[0], values[values.length - 1]);
     }
 
-    public int computeIndexByValue(T value) throws ChartOutOfBoundsException {
+    public int computeIndexByValue(T value) {
         if (values.length == 0) {
-            throw new ChartOutOfBoundsException("Can't compute index because values are empty");
+            return 0;
         }
 
         int fromIndex = 0;

@@ -6,18 +6,20 @@ import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IntLabelsValuesComputer implements Function<ChartRange<Integer>, List<Integer>> {
+public class ChartDateLabelsValuesComputer implements Function<ChartRange<Long>, List<Long>> {
     private static final int SUBDIVISIONS = 6;
 
-    private List<Integer> valuesCache = new ArrayList<>();
+    private List<Long> valuesCache = new ArrayList<>();
 
     @NonNull
     @Override
-    public List<Integer> apply(@NonNull ChartRange<Integer> range) {
-        int step = (range.getTo() - range.getFrom()) / SUBDIVISIONS;
-        valuesCache.clear();
+    public List<Long> apply(@NonNull ChartRange<Long> range) {
+        long step = (range.getTo() - range.getFrom()) / SUBDIVISIONS;
 
-        for (int index = 0, value = range.getFrom(); index < SUBDIVISIONS; index++, value += step) {
+        valuesCache.clear();
+        long value = range.getFrom() + step / 2L;
+
+        for (int index = 0; index < SUBDIVISIONS; index++, value += step) {
             valuesCache.add(value);
         }
 

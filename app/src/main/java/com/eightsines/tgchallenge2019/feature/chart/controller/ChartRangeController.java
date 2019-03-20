@@ -40,8 +40,8 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
         @SuppressWarnings("unchecked")
         @Override
         public void onAnimationUpdate(ValueAnimator animation) {
-            range.setFrom((T)animation.getAnimatedValue(PROP_FROM));
-            range.setTo((T)animation.getAnimatedValue(PROP_TO));
+            range.setRange((T)animation.getAnimatedValue(PROP_FROM),
+                    (T)animation.getAnimatedValue(PROP_TO));
 
             if (onUpdatedListener != null) {
                 onUpdatedListener.run();
@@ -52,11 +52,6 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
     public ChartRangeController(@NonNull ChartRange<T> range, @NonNull TypeEvaluator<T> evaluator) {
         this.range = range;
         this.evaluator = evaluator;
-    }
-
-    @NonNull
-    public ChartRange<T> getRange() {
-        return range;
     }
 
     public void setRange(@NonNull ChartRange<T> range, long animationDuration) {
@@ -72,6 +67,7 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
                 PropertyValuesHolder.ofObject(PROP_FROM, evaluator, this.range.getFrom(), range.getFrom()),
                 PropertyValuesHolder.ofObject(PROP_TO, evaluator, this.range.getTo(), range.getTo()));
 
+        animator.setDuration(animationDuration);
         animator.addListener(animatorListener);
         animator.addUpdateListener(animatorUpdateListener);
         animator.start();

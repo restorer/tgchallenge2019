@@ -2,20 +2,36 @@ package com.eightsines.tgchallenge2019.feature.chart.data;
 
 import androidx.annotation.NonNull;
 import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
 import java.util.List;
 
 public class ChartData<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> {
+    private ChartTypeDescriptor<X> xTypeDescriptor;
+    private ChartTypeDescriptor<Y> yTypeDescriptor;
     private ChartXValues<X> xValues;
     private List<ChartYValues<Y>> yValuesList;
 
-    public ChartData(@NonNull ChartXValues<X> xValues, @NonNull List<ChartYValues<Y>> yValuesList) throws
-            ChartException {
+    public ChartData(
+            @NonNull ChartTypeDescriptor<X> xTypeDescriptor,
+            @NonNull ChartTypeDescriptor<Y> yTypeDescriptor,
+            @NonNull ChartXValues<X> xValues,
+            @NonNull List<ChartYValues<Y>> yValuesList) throws ChartException {
 
+        this.xTypeDescriptor = xTypeDescriptor;
+        this.yTypeDescriptor = yTypeDescriptor;
         this.xValues = xValues;
         this.yValuesList = yValuesList;
 
         initialize();
+    }
+
+    @NonNull
+    public ChartTypeDescriptor<X> getXTypeDescriptor() {
+        return xTypeDescriptor;
+    }
+
+    @NonNull
+    public ChartTypeDescriptor<Y> getYTypeDescriptor() {
+        return yTypeDescriptor;
     }
 
     @NonNull
@@ -33,8 +49,8 @@ public class ChartData<X extends Number & Comparable<X>, Y extends Number & Comp
     }
 
     @NonNull
-    public ChartRange<X> getXRange() throws ChartOutOfBoundsException {
-        return xValues.getRange();
+    public ChartRange<X> getXFullRange() {
+        return xValues.getFullRange();
     }
 
     private void initialize() throws ChartException {
@@ -47,11 +63,11 @@ public class ChartData<X extends Number & Comparable<X>, Y extends Number & Comp
         }
 
         if (!xValues.isEmpty()) {
-            sortData(0, xValues.getMaxIndex());
+            sortByXValues(0, xValues.getLength() - 1);
         }
     }
 
-    private void sortData(int fromIndex, int toIndex) {
+    private void sortByXValues(int fromIndex, int toIndex) {
         if (fromIndex >= toIndex) {
             return;
         }
@@ -70,8 +86,8 @@ public class ChartData<X extends Number & Comparable<X>, Y extends Number & Comp
 
         swapData(partitionIndex + 1, toIndex);
 
-        sortData(fromIndex, partitionIndex);
-        sortData(partitionIndex + 2, toIndex);
+        sortByXValues(fromIndex, partitionIndex);
+        sortByXValues(partitionIndex + 2, toIndex);
     }
 
     private void swapData(int fromIndex, int toIndex) {
