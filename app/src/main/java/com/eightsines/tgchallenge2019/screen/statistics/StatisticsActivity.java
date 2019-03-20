@@ -1,6 +1,5 @@
 package com.eightsines.tgchallenge2019.screen.statistics;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -15,17 +14,16 @@ import com.eightsines.tgchallenge2019.AppConfig;
 import com.eightsines.tgchallenge2019.R;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
-import com.eightsines.tgchallenge2019.feature.chart.exception.ChartOutOfBoundsException;
-import com.eightsines.tgchallenge2019.feature.tgchart.TgChartReader;
-import com.eightsines.tgchallenge2019.feature.tgchart.TgChartControlView;
 import com.eightsines.tgchallenge2019.feature.preferences.AppPreferences;
+import com.eightsines.tgchallenge2019.feature.tgchart.TgChartControlView;
+import com.eightsines.tgchallenge2019.feature.tgchart.TgChartReader;
 import com.eightsines.tgchallenge2019.feature.util.AppResUtils;
 import java.io.IOException;
 import java.util.List;
 
 public class StatisticsActivity extends AppCompatActivity {
     private AppPreferences preferences;
-    private TgChartControlView chartView;
+    private TgChartControlView chartControlView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,22 +34,12 @@ public class StatisticsActivity extends AppCompatActivity {
 
         preferences = new AppPreferences(this);
         updateTheme();
-    }
 
-    @SuppressLint("SetTextI18n")
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        chartView = findViewById(R.id.chart);
+        chartControlView = findViewById(R.id.chart);
         List<ChartData<Long, Integer>> charts = getCharts();
 
         if (!charts.isEmpty()) {
-            try {
-                chartView.setChartData("Followers", charts.get(0));
-            } catch (ChartOutOfBoundsException ignored) {
-                // ignored
-            }
+            chartControlView.setChartData("Followers", charts.get(0));
         }
     }
 

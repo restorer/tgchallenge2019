@@ -1,11 +1,14 @@
 package com.eightsines.tgchallenge2019.feature.tgchart;
 
+import android.animation.IntEvaluator;
 import android.graphics.Color;
 import androidx.annotation.NonNull;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
+import com.eightsines.tgchallenge2019.feature.chart.data.ChartTypeDescriptor;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartXValues;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
 import com.eightsines.tgchallenge2019.feature.chart.exception.ChartException;
+import com.eightsines.tgchallenge2019.feature.util.LongEvaluator;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -92,6 +95,7 @@ public final class TgChartReader {
                         }
 
                         yValuesList.add(new ChartYValues<>(yValues,
+                                0,
                                 namesObject.getString(columnKey),
                                 parseColor(colorsObject.getString(columnKey))));
 
@@ -103,7 +107,11 @@ public final class TgChartReader {
                 }
             }
 
-            return new ChartData<>(new ChartXValues<>(xValues), yValuesList);
+            return new ChartData<>(
+                    new ChartTypeDescriptor<>(0L, new LongEvaluator()),
+                    new ChartTypeDescriptor<>(0, new IntEvaluator()),
+                    new ChartXValues<>(xValues, 0L),
+                    yValuesList);
         } catch (JSONException e) {
             throw new ChartException("Unable to parse chart data: " + e.toString(), e);
         }

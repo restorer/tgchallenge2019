@@ -1,10 +1,11 @@
 package com.eightsines.tgchallenge2019.feature.tgchart;
 
-import android.animation.IntEvaluator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +20,6 @@ import androidx.core.widget.CompoundButtonCompat;
 import com.eightsines.tgchallenge2019.R;
 import com.eightsines.tgchallenge2019.feature.chart.controller.ChartController;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
-import com.eightsines.tgchallenge2019.feature.chart.data.ChartRange;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsFormatter;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsValuesComputer;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsFormatter;
@@ -36,10 +36,15 @@ public class TgChartControlView extends LinearLayout {
     private TextView titleView;
     private ChartGraphView<Long, Integer> graphView;
     private ChartGraphView<Long, Integer> previewView;
-    private int checkListOffset;
-    private int checkBoxTextOffset;
+    private int controlsOffset;
+    private int controlsSpacing;
+    private int controlsTextOffset;
+    private int controlsSeparatorHeight;
+    private int controlsSeparatorColor;
+    private ChartData<Long, Integer> chartData;
     private ChartController<Long, Integer> controller;
     private List<AppCompatCheckBox> checkBoxViewList = new ArrayList<>();
+    private List<View> separatorViewList = new ArrayList<>();
 
     private CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
@@ -83,8 +88,11 @@ public class TgChartControlView extends LinearLayout {
         Resources res = context.getResources();
 
         int padding = res.getDimensionPixelSize(R.dimen.chart__padding);
-        checkListOffset = res.getDimensionPixelSize(R.dimen.chart__checklist_offset);
-        checkBoxTextOffset = res.getDimensionPixelSize(R.dimen.chart__checkbox_text_offset);
+        controlsOffset = res.getDimensionPixelSize(R.dimen.chart__controls_offset);
+        controlsSpacing = res.getDimensionPixelSize(R.dimen.chart__controls_spacing);
+        controlsTextOffset = res.getDimensionPixelSize(R.dimen.chart__controls_text_offset);
+        controlsSeparatorHeight = res.getDimensionPixelSize(R.dimen.chart__controls_separator_height);
+        controlsSeparatorColor = ContextCompat.getColor(context, R.color.chart__controls_separator);
 
         setOrientation(LinearLayout.VERTICAL);
         setBackgroundColor(ContextCompat.getColor(context, R.color.chart__background));
@@ -94,7 +102,7 @@ public class TgChartControlView extends LinearLayout {
             setElevation(res.getDimension(R.dimen.chart__elevation));
         }
 
-        View rootView = LayoutInflater.from(context).inflate(R.layout.chart__view, this, true);
+        View rootView = LayoutInflater.from(context).inflate(R.layout.tgchart__control, this, true);
 
         titleView = rootView.findViewById(R.id.title);
         graphView = rootView.findViewById(R.id.graph);
@@ -102,15 +110,13 @@ public class TgChartControlView extends LinearLayout {
     }
 
     public void setChartData(@NonNull String title, @NonNull ChartData<Long, Integer> chartData) {
-        for (AppCompatCheckBox checkBoxView : checkBoxViewList) {
-            removeView(checkBoxView);
-        }
+        controller = null;
+        removeAllDynamicViews();
 
-        checkBoxViewList.clear();
+        this.chartData = chartData;
         titleView.setText(title);
 
         if (chartData.isEmpty()) {
-            controller = null;
             graphView.setController(false, null, null);
             previewView.setController(true, null, null);
             return;
@@ -130,25 +136,77 @@ public class TgChartControlView extends LinearLayout {
         graphView.setController(false, controller, chartData);
         previewView.setController(true, controller, chartData);
 
-        for (int position = 0, count = controller.getYValuesCount(); position < count; position++) {
-            AppCompatCheckBox checkBox = new AppCompatCheckBox(getContext());
-
-            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, checkListOffset, 0, 0);
-
-            checkBox.setLayoutParams(lp);
-            checkBox.setTag(position);
-            checkBox.setPadding(checkBoxTextOffset, 0, 0, 0);
-            checkBox.setChecked(controller.isYValuesEnabled(position));
-            checkBox.setText(controller.getYValuesName(position));
-
-            CompoundButtonCompat.setButtonTintList(checkBox,
-                    ColorStateList.valueOf(controller.getYValuesColor(position)));
-
-            checkBox.setOnCheckedChangeListener(onCheckedChangeListener);
-
-            checkBoxViewList.add(checkBox);
-            addView(checkBox);
+        for (int position = 0, count = chartData.getYValuesList().size(); position < count; position++) {
+            appendDynamicViews(position);
         }
+    }
+
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        return (controller == null)
+                ? super.onSaveInstanceState()
+                : controller.onSaveInstanceState(super.onSaveInstanceState());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        super.onRestoreInstanceState(controller == null ? state : controller.onRestoreInstanceState(state));
+
+        if (controller != null) {
+            for (int position = 0, count = Math.min(controller.getYValuesControllerList().size(),
+                    checkBoxViewList.size()); position < count; position++) {
+
+                checkBoxViewList.get(position).setChecked(controller.isYValuesEnabled(position));
+            }
+        }
+    }
+
+    private void removeAllDynamicViews() {
+        for (AppCompatCheckBox checkBoxView : checkBoxViewList) {
+            removeView(checkBoxView);
+        }
+
+        for (View separatorView : separatorViewList) {
+            removeView(separatorView);
+        }
+
+        checkBoxViewList.clear();
+        separatorViewList.clear();
+    }
+
+    private void appendDynamicViews(int position) {
+        AppCompatCheckBox checkBoxView = new AppCompatCheckBox(getContext());
+
+        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, (position == 0 ? controlsOffset : 0) + controlsSpacing, 0, controlsSpacing);
+
+        checkBoxView.setLayoutParams(lp);
+        checkBoxView.setTag(position);
+        checkBoxView.setPadding(controlsTextOffset, 0, 0, 0);
+        checkBoxView.setChecked(controller.isYValuesEnabled(position));
+        checkBoxView.setText(chartData.getYValuesList().get(position).getName());
+
+        CompoundButtonCompat.setButtonTintList(checkBoxView,
+                ColorStateList.valueOf(chartData.getYValuesList().get(position).getColor()));
+
+        checkBoxView.setOnCheckedChangeListener(onCheckedChangeListener);
+
+        if (position != 0) {
+            Drawable drawable = CompoundButtonCompat.getButtonDrawable(checkBoxView);
+            View separatorView = new View(getContext());
+
+            lp = new LayoutParams(LayoutParams.MATCH_PARENT, controlsSeparatorHeight);
+            lp.setMargins((drawable == null ? 0 : drawable.getIntrinsicWidth()) + controlsTextOffset, 0, 0, 0);
+
+            separatorView.setLayoutParams(lp);
+            separatorView.setBackgroundColor(controlsSeparatorColor);
+
+            separatorViewList.add(separatorView);
+            addView(separatorView);
+        }
+
+        checkBoxViewList.add(checkBoxView);
+        addView(checkBoxView);
     }
 }

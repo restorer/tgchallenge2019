@@ -181,10 +181,6 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         return result;
     }
 
-    private static final String KEY_RANGE_FROM = "KEY_RANGE_FROM";
-    private static final String KEY_RANGE_TO = "KEY_RANGE_TO";
-    private static final String KEY_YVALUES_ENABLED = "KEY_YVALUES_ENABLED";
-
     public Parcelable onSaveInstanceState(@Nullable Parcelable superState) {
         boolean[] yValuesEnabledList = new boolean[yValuesControllerList.size()];
 
