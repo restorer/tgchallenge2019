@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <dimen name="statistics__chart_offset">16dp</dimen>
+
     <dimen name="chart__elevation">4dp</dimen>
     <dimen name="chart__padding">16dp</dimen>
     <dimen name="chart__title_text">16sp</dimen>

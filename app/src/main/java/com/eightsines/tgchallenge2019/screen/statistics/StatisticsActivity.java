@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,8 +24,10 @@ import java.io.IOException;
 import java.util.List;
 
 public class StatisticsActivity extends AppCompatActivity {
+    private static final int CHARTS_IDS = 1000;
+
     private AppPreferences preferences;
-    private TgChartControlView chartControlView;
+    private LinearLayout chartsContainerView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,13 +37,13 @@ public class StatisticsActivity extends AppCompatActivity {
         setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
 
         preferences = new AppPreferences(this);
-        updateTheme();
+        chartsContainerView = findViewById(R.id.charts_container);
 
-        chartControlView = findViewById(R.id.chart);
+        updateTheme();
         List<ChartData<Long, Integer>> charts = getCharts();
 
-        if (!charts.isEmpty()) {
-            chartControlView.setChartData("Followers", charts.get(0));
+        for (int index = 0, length = charts.size(); index < length; index++) {
+            appendTgChartView(index, charts.get(index));
         }
     }
 
@@ -64,6 +68,19 @@ public class StatisticsActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void appendTgChartView(int index, ChartData<Long, Integer> chartData) {
+        TgChartControlView chartControlView = new TgChartControlView(this);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        chartControlView.setId(CHARTS_IDS + index);
+        chartControlView.setLayoutParams(lp);
+        chartsContainerView.addView(chartControlView);
+
+        chartControlView.setChartData("Followers #" + (index + 1), chartData);
     }
 
     private void updateTheme() {
