@@ -7,7 +7,7 @@
         android:icon="@mipmap/core__app_icon"
         android:label="@string/core__app_name"
         android:name="com.eightsines.tgchallenge2019.App"
-        android:roundIcon="@mipmap/core__app_icon_round"
+        android:roundIcon="@mipmap/core__app_icon"
         android:supportsRtl="false"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">

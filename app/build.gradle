@@ -7,16 +7,23 @@ android {
         minSdkVersion 16
         targetSdkVersion 28
 
-        applicationId "com.eightsines.tgchallenge2019"
+        applicationId 'com.eightsines.tgchallenge2019'
 
         versionCode 1
-        versionName "1.0"
+        versionName '1.0'
     }
 
     buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+
+            // TODO: proguard-android-optimize.txt
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
