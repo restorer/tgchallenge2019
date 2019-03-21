@@ -234,8 +234,6 @@ public class TgChartControlView extends LinearLayout {
         graphView.addOnLayoutChangeListener(onGraphViewLayoutChangeListener);
         infoContainerView.addOnLayoutChangeListener(onInfoContainerViewLayoutChangeListener);
         infoContainerView.setOnClickListener(onInfoViewClickListener);
-
-        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
     }
 
     @SuppressWarnings("MagicNumber")
@@ -398,7 +396,7 @@ public class TgChartControlView extends LinearLayout {
             }
         }
 
-        int valueTextSize = computeTextSize(infoValueTextSize);
+        int valueTextSize = computeTextSize(infoValueTextSize, Typeface.BOLD);
         textCache.clear();
 
         for (int position = 0, count = chartData.getYValuesList().size(); position < count; position++) {
@@ -407,7 +405,7 @@ public class TgChartControlView extends LinearLayout {
             }
         }
 
-        int labelTextSize = computeTextSize(infoLabelTextSize);
+        int labelTextSize = computeTextSize(infoLabelTextSize, Typeface.BOLD);
         boolean shouldHaveOffset = false;
 
         for (int position = 0, count = chartData.getYValuesList().size(); position < count; position++) {
@@ -465,12 +463,14 @@ public class TgChartControlView extends LinearLayout {
         infoSeriesContainer.addView(seriesContainerView);
     }
 
-    private int computeTextSize(int desiredSize) {
+    private int computeTextSize(int desiredSize, int typefaceStyle) {
         int maxWidth = graphView.getMeasuredWidth() - infoOffset * 2 - infoPaddingHorizontal * 2;
 
         if (maxWidth < 0) {
             return infoTextMinSize;
         }
+
+        textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, typefaceStyle));
 
         while (desiredSize > infoTextMinSize) {
             textPaint.setTextSize(desiredSize);

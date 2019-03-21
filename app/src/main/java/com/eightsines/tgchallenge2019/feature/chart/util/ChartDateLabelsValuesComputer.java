@@ -11,7 +11,7 @@ public class ChartDateLabelsValuesComputer implements Function<ChartRange<Long>,
     private long step = AppTimeUtils.DAY_MS;
     private List<Long> valuesCache = new ArrayList<>();
 
-    public long getStep() {
+    long getStep() {
         return step;
     }
 
