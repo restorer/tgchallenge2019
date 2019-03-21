@@ -23,6 +23,8 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         void onChartYValuesStateChanged();
 
         void onChartSelectedIndexChanged();
+
+        void onViewStateRestored();
     }
 
     private static final long DURATION_DEFAULT = 300L;
@@ -262,10 +264,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         selectedIndex = chartState.getSelectedIndex();
 
         for (Listener listener : listenerSet) {
-            listener.onChartInvalidated();
-            listener.onChartVisibleRangeChanged();
-            listener.onChartYValuesStateChanged();
-            listener.onChartSelectedIndexChanged();
+            listener.onViewStateRestored();
         }
 
         return chartState.getSuperState();

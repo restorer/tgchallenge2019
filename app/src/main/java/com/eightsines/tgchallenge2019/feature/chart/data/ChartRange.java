@@ -2,7 +2,7 @@ package com.eightsines.tgchallenge2019.feature.chart.data;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.Objects;
+import androidx.core.util.ObjectsCompat;
 
 public class ChartRange<T extends Number & Comparable<T>> {
     private T from;
@@ -14,6 +14,7 @@ public class ChartRange<T extends Number & Comparable<T>> {
         this.to = to;
     }
 
+    @SuppressWarnings("CopyConstructorMissesField")
     public ChartRange(@NonNull ChartRange<T> range) {
         this.from = range.from;
         this.to = range.to;
@@ -74,7 +75,7 @@ public class ChartRange<T extends Number & Comparable<T>> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(from, to);
+        return ObjectsCompat.hash(from, to);
     }
 
     @Override
@@ -88,7 +89,7 @@ public class ChartRange<T extends Number & Comparable<T>> {
         }
 
         ChartRange<?> lhs = (ChartRange<?>)o;
-        return Objects.equals(from, lhs.from) && Objects.equals(to, lhs.to);
+        return ObjectsCompat.equals(from, lhs.from) && ObjectsCompat.equals(to, lhs.to);
     }
 
     @NonNull

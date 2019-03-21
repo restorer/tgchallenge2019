@@ -90,6 +90,16 @@ public class ChartLabelsController<T extends Number & Comparable<T>> {
                 animator.cancel();
             }
 
+            if (animationDuration <= 0L) {
+                alpha = active ? 1.0f : 0.0f;
+
+                if (onUpdatedListener != null) {
+                    onUpdatedListener.run();
+                }
+
+                return;
+            }
+
             animator = ValueAnimator.ofFloat(alpha, active ? 1.0f : 0.0f).setDuration(animationDuration);
             animator.addListener(animatorListener);
             animator.addUpdateListener(animatorUpdateListener);

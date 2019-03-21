@@ -10,8 +10,8 @@ import java.util.Locale;
 
 public class ChartDateLabelsFormatter implements Function<Long, String> {
     private static final DateFormat DATE_FORMAT_MD = new SimpleDateFormat("MMM d", Locale.US);
-    private static final DateFormat DATE_FORMAT_YM = new SimpleDateFormat("YYYY MMM", Locale.US);
-    private static final DateFormat DATE_FORMAT_Y = new SimpleDateFormat("YYYY", Locale.US);
+    private static final DateFormat DATE_FORMAT_YM = new SimpleDateFormat("yyyy MMM", Locale.US);
+    private static final DateFormat DATE_FORMAT_Y = new SimpleDateFormat("yyyy", Locale.US);
 
     private ChartDateLabelsValuesComputer valuesComputer;
     private Date dateCache = new Date();

@@ -42,10 +42,10 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     private float previewFrameBorderHeight;
     private float previewFrameHandleWidth;
     private int chartBackgroundColor;
-    private Paint chartAxisLinePaint = new Paint();
-    private Paint chartLabelTextPaint = new Paint();
-    private Paint previewFramePaint = new Paint();
-    private Paint previewOverlayPaint = new Paint();
+    private Paint chartAxisLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint chartLabelTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint previewFramePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint previewOverlayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Path previewFramePath = new Path();
 
     private boolean isPreview;
@@ -70,6 +70,8 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     private RectF renderViewPort = new RectF();
     private int xPreviewFrameFrom;
     private int xPreviewFrameTo;
+    private float xSelectedPosition;
+    private Runnable onXSelectedPositionUpdatedListener;
 
     private boolean isPressed;
     private boolean isDragging;
@@ -80,6 +82,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
 
     private boolean refreshYRangeAndLabelsPending;
     @SuppressWarnings("BooleanVariableAlwaysNegated") private boolean forceRefreshYRange;
+    private boolean refreshWithoutAnimations;
     private ChartRange<X> xLastSnappedRange;
 
     private Runnable onUpdatedListener = new Runnable() {
@@ -118,6 +121,15 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
 
             invalidate();
         }
+
+        @Override
+        public void onViewStateRestored() {
+            refreshYRangeAndLabelsPending = true;
+            forceRefreshYRange = true;
+            refreshWithoutAnimations = true;
+
+            invalidate();
+        }
     };
 
     public ChartGraphView(@NonNull Context context) {
@@ -147,19 +159,15 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         previewFrameHandleWidth = res.getDimensionPixelSize(R.dimen.chart__preview_frame_handle);
         chartBackgroundColor = ContextCompat.getColor(context, R.color.chart__background);
 
-        chartAxisLinePaint.setAntiAlias(true);
         chartAxisLinePaint.setColor(ContextCompat.getColor(context, R.color.chart__axis_line));
         chartAxisLinePaint.setStrokeWidth(res.getDimensionPixelSize(R.dimen.chart__graph_axis));
 
-        chartLabelTextPaint.setAntiAlias(true);
         chartLabelTextPaint.setColor(ContextCompat.getColor(context, R.color.chart__label_text));
         chartLabelTextPaint.setTextSize(res.getDimensionPixelSize(R.dimen.chart__graph_label_text));
 
-        previewFramePaint.setAntiAlias(true);
         previewFramePaint.setStyle(Paint.Style.FILL);
         previewFramePaint.setColor(ContextCompat.getColor(context, R.color.chart__preview_frame));
 
-        previewOverlayPaint.setAntiAlias(true);
         previewOverlayPaint.setColor(ContextCompat.getColor(context, R.color.chart__preview_overlay));
     }
 
@@ -241,21 +249,34 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         invalidate();
     }
 
+    public float getXSelectedPosition() {
+        return xSelectedPosition;
+    }
+
+    public void setXSelectedPositionUpdatedListener(Runnable xSelectedPositionUpdatedListener) {
+        this.onXSelectedPositionUpdatedListener = xSelectedPositionUpdatedListener;
+    }
+
     private void refreshYRangeAndLabels() {
         if (!forceRefreshYRange && xLastSnappedRange.equals(xSnappedRange)) {
             return;
         }
 
         ChartRange<Y> newYRange = controller.computeYRange(chartData, xSnappedRange);
-        yRangeController.setRange(newYRange, controller.getAnimationDuration());
+        yRangeController.setRange(newYRange, refreshWithoutAnimations ? 0L : controller.getAnimationDuration());
 
         if (!isPreview) {
-            xLabelsController.updateRange(xSnappedRange, controller.getAnimationDuration());
-            yLabelsController.updateRange(newYRange, controller.getAnimationDuration());
+            xLabelsController.updateRange(xSnappedRange,
+                    refreshWithoutAnimations ? 0L : controller.getAnimationDuration());
+
+            yLabelsController.updateRange(newYRange,
+                    refreshWithoutAnimations ? 0L : controller.getAnimationDuration());
         }
 
         xLastSnappedRange.setRange(xSnappedRange.getFrom(), xSnappedRange.getTo());
+
         forceRefreshYRange = false;
+        refreshWithoutAnimations = false;
     }
 
     @Override
@@ -288,13 +309,13 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
                     if (isPreview) {
                         choosePreviewMode();
                     } else {
-                        setChartSelection(viewX, false);
+                        setChartSelection(viewX);
                     }
                 } else if (isDragging) {
                     if (isPreview) {
                         handlePreviewDrag(viewX);
                     } else {
-                        setChartSelection(viewX, false);
+                        setChartSelection(viewX);
                     }
                 }
                 break;
@@ -302,7 +323,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
 
             case MotionEvent.ACTION_UP:
                 if (!isPreview && isPressed && !isDragging && Math.abs(event.getX() - xStartPress) <= DRAG_THRESHOLD) {
-                    setChartSelection(xStartPress, true);
+                    setChartSelection(xStartPress);
                 }
                 // fallthrough
 
@@ -409,7 +430,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         }
     }
 
-    private void setChartSelection(float viewX, boolean isUpAction) {
+    private void setChartSelection(float viewX) {
         if (chartViewPort == null || renderViewPort == null) {
             return;
         }
@@ -446,9 +467,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             }
         }
 
-        controller.setSelectedIndex((isUpAction && controller.getSelectedIndex() == selectedIndex)
-                ? -1
-                : selectedIndex);
+        controller.setSelectedIndex(selectedIndex);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -532,8 +551,18 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         if (controller.getSelectedIndex() >= 0) {
             float x = transformX(chartData.getXValues().getValueAtIndex(controller.getSelectedIndex()).floatValue());
 
+            if (Math.abs(xSelectedPosition - x) > AppMathUtils.EPSILON_F) {
+                xSelectedPosition = x;
+
+                if (onXSelectedPositionUpdatedListener != null) {
+                    onXSelectedPositionUpdatedListener.run();
+                }
+            }
+
             chartAxisLinePaint.setAlpha(255);
-            canvas.drawLine(x, renderViewPort.top, x, renderViewPort.bottom, chartAxisLinePaint);
+
+            canvas.drawLine(xSelectedPosition, renderViewPort.top,
+                    xSelectedPosition, renderViewPort.bottom, chartAxisLinePaint);
         }
     }
 
@@ -559,10 +588,8 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         }
 
         if (controller.getSelectedIndex() >= 0) {
-            float x = transformX(chartData.getXValues().getValueAtIndex(controller.getSelectedIndex()).floatValue());
-
             for (LineRenderer lineRenderer : lineRendererList) {
-                lineRenderer.drawSelection(canvas, controller.getSelectedIndex(), x);
+                lineRenderer.drawSelection(canvas, controller.getSelectedIndex(), xSelectedPosition);
             }
         }
     }
@@ -621,7 +648,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     private class LineRenderer {
         private ChartYValues<Y> yValues;
         private ChartYValuesController yValuesController;
-        private Paint paint = new Paint();
+        private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private Path path = new Path();
         private boolean hasNoPoints = true;
 
@@ -629,7 +656,6 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             this.yValues = yValues;
             this.yValuesController = yValuesController;
 
-            paint.setAntiAlias(true);
             paint.setStrokeJoin(Paint.Join.ROUND);
         }
 

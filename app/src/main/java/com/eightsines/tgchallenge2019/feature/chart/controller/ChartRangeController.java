@@ -68,6 +68,16 @@ public class ChartRangeController<T extends Number & Comparable<T>> {
             animator.cancel();
         }
 
+        if (animationDuration <= 0L) {
+            controlledRange.setRange(range.getFrom(), range.getTo());
+
+            if (onUpdatedListener != null) {
+                onUpdatedListener.run();
+            }
+
+            return;
+        }
+
         animator = ValueAnimator.ofPropertyValuesHolder(
                 PropertyValuesHolder.ofObject(PROP_FROM, evaluator, controlledRange.getFrom(), range.getFrom()),
                 PropertyValuesHolder.ofObject(PROP_TO, evaluator, controlledRange.getTo(), range.getTo()));

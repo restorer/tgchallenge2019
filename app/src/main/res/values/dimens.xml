@@ -6,6 +6,7 @@
     <dimen name="chart__padding">16dp</dimen>
     <dimen name="chart__title_text">16sp</dimen>
     <dimen name="chart__info_elevation">4dp</dimen>
+    <dimen name="chart__info_offset">4dp</dimen>
     <dimen name="chart__info_padding_horizontal">12dp</dimen>
     <dimen name="chart__info_padding_vertical">6dp</dimen>
     <dimen name="chart__info_title_text">14sp</dimen>
@@ -13,6 +14,8 @@
     <dimen name="chart__info_label_text">12sp</dimen>
     <dimen name="chart__info_title_offset">8dp</dimen>
     <dimen name="chart__info_series_offset">18dp</dimen>
+    <dimen name="chart__info_text_min">8sp</dimen>
+    <dimen name="chart__info_text_granularity">2sp</dimen>
     <dimen name="chart__controls_offset">16dp</dimen>
     <dimen name="chart__controls_spacing">8dp</dimen>
     <dimen name="chart__controls_text_offset">16dp</dimen>

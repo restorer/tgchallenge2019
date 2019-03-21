@@ -12,6 +12,7 @@
         <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
         <item name="android:minHeight">?attr/actionBarSize</item>
         <item name="android:background">?attr/colorPrimary</item>
+        <item name="titleTextColor">@color/core__text_on_primary</item>
         <item tools:ignore="NewApi" name="android:elevation">4dp</item>
     </style>
 
