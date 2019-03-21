@@ -255,11 +255,11 @@ public class TgChartControlView extends LinearLayout {
             return;
         }
 
-        ChartDateLabelsValuesComputer xLabelsValuesComputer = new ChartDateLabelsValuesComputer();
+        ChartDateLabelsValuesComputer xLabelsValuesComputer = new ChartDateLabelsValuesComputer(chartData.getXFullRange());
 
         long xRangeLength = chartData.getXFullRange().getTo() - chartData.getXFullRange().getFrom();
-        long xMinRangeLength = xRangeLength / 8;
-        long xInitialRangeLength = xRangeLength / 4;
+        long xMinRangeLength = xRangeLength / 8L;
+        long xInitialRangeLength = xRangeLength * 10L / 45L;
 
         controller = new ChartController<>(chartData,
                 new ChartDateLabelsFormatter(xLabelsValuesComputer),

@@ -8,10 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChartDateLabelsValuesComputer implements Function<ChartRange<Long>, List<Long>> {
-    private static final int SUBDIVISIONS = 3;
+    private static final long SUBDIVISIONS = AppTimeUtils.DAY_MS * 35L / 10L;
 
+    private ChartRange<Long> fullRange;
     private long step = AppTimeUtils.DAY_MS;
     private List<Long> valuesCache = new ArrayList<>();
+
+    public ChartDateLabelsValuesComputer(ChartRange<Long> fullRange) {
+        this.fullRange = fullRange;
+    }
 
     long getStep() {
         return step;
@@ -21,15 +26,14 @@ public class ChartDateLabelsValuesComputer implements Function<ChartRange<Long>,
     @NonNull
     @Override
     public List<Long> apply(@NonNull ChartRange<Long> range) {
-        step = Math.max(1L, Long.highestOneBit((range.getTo() - range.getFrom()) / AppTimeUtils.DAY_MS / SUBDIVISIONS))
-                * AppTimeUtils.DAY_MS;
+        step = Math.max(1L, Long.highestOneBit((range.getTo() - range.getFrom()) / SUBDIVISIONS)) * AppTimeUtils.DAY_MS;
 
         valuesCache.clear();
-        long value = (range.getFrom() / step) * step;
+        long value = fullRange.getTo() - ((fullRange.getTo() - range.getTo()) / step) * step;
 
-        while (value < range.getTo() + step) {
+        while (value >= range.getFrom()) {
             valuesCache.add(value);
-            value += step;
+            value -= step;
         }
 
         return valuesCache;
