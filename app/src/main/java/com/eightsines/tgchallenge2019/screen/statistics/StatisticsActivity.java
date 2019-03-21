@@ -42,14 +42,9 @@ public class StatisticsActivity extends AppCompatActivity {
         updateTheme();
         List<ChartData<Long, Integer>> charts = getCharts();
 
-        /*
         for (int index = 0, length = charts.size(); index < length; index++) {
             appendTgChartView(index, charts.get(index));
         }
-        */
-
-        appendTgChartView(0, charts.get(0));
-        // appendTgChartView(2, charts.get(2));
     }
 
     @Override
@@ -80,6 +75,10 @@ public class StatisticsActivity extends AppCompatActivity {
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        if (index > 0) {
+            lp.setMargins(0, getResources().getDimensionPixelOffset(R.dimen.statistics__chart_offset), 0, 0);
+        }
 
         chartControlView.setId(CHARTS_IDS + index);
         chartControlView.setLayoutParams(lp);

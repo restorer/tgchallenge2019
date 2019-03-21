@@ -20,7 +20,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
 
         void onChartVisibleRangeChanged();
 
-        void onChartStateChanged();
+        void onChartYValuesStateChanged();
 
         void onChartSelectedIndexChanged();
     }
@@ -31,6 +31,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
     private Function<ChartRange<X>, List<X>> xLabelsValuesComputer;
     private Function<Y, String> yLabelsFormatter;
     private Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer;
+    private Consumer<ChartRange<X>> xVisibleRangeSnapper;
     private Consumer<ChartRange<Y>> yRangeSnapper;
     private X xMinVisibleRange;
     private long animationDuration = DURATION_DEFAULT;
@@ -38,6 +39,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
     private ChartTypeDescriptor<Y> yTypeDescriptor;
     private ChartRange<X> xFullRange;
     private ChartRange<X> xVisibleRange;
+    private ChartRange<X> xSnappedVisibleRange;
     private int selectedIndex = -1;
     private List<ChartYValuesController> yValuesControllerList = new ArrayList<>();
     private Set<Listener> listenerSet = new HashSet<>();
@@ -54,6 +56,9 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
     @SuppressWarnings("FieldCanBeLocal") private Runnable onXVisibleRangeUpdated = new Runnable() {
         @Override
         public void run() {
+            xSnappedVisibleRange.setRange(xVisibleRange.getFrom(), xVisibleRange.getTo());
+            xVisibleRangeSnapper.accept(xSnappedVisibleRange);
+
             for (Listener listener : listenerSet) {
                 listener.onChartVisibleRangeChanged();
             }
@@ -65,6 +70,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
             Function<ChartRange<X>, List<X>> xLabelsValuesComputer,
             Function<Y, String> yLabelsFormatter,
             Function<ChartRange<Y>, List<Y>> yLabelsValuesComputer,
+            Consumer<ChartRange<X>> xVisibleRangeSnapper,
             Consumer<ChartRange<Y>> yRangeSnapper,
             X xMinVisibleRange) {
 
@@ -72,6 +78,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         this.xLabelsValuesComputer = xLabelsValuesComputer;
         this.yLabelsFormatter = yLabelsFormatter;
         this.yLabelsValuesComputer = yLabelsValuesComputer;
+        this.xVisibleRangeSnapper = xVisibleRangeSnapper;
         this.yRangeSnapper = yRangeSnapper;
         this.xMinVisibleRange = xMinVisibleRange;
 
@@ -81,6 +88,9 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
 
         xVisibleRange = new ChartRange<>(xFullRange);
         xVisibleRange.setOnUpdatedListener(onXVisibleRangeUpdated);
+
+        xSnappedVisibleRange = new ChartRange<>(xVisibleRange);
+        xVisibleRangeSnapper.accept(xSnappedVisibleRange);
 
         for (ChartYValues<Y> yValues : chartData.getYValuesList()) {
             ChartYValuesController yValuesController = new ChartYValuesController(yValues.getColor());
@@ -137,6 +147,10 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         return xVisibleRange;
     }
 
+    public ChartRange<X> getXSnappedVisibleRange() {
+        return xSnappedVisibleRange;
+    }
+
     public int getSelectedIndex() {
         return selectedIndex;
     }
@@ -171,7 +185,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         yValuesController.setEnabled(enabled, animationDuration);
 
         for (Listener listener : listenerSet) {
-            listener.onChartStateChanged();
+            listener.onChartYValuesStateChanged();
         }
     }
 
@@ -250,7 +264,7 @@ public class ChartController<X extends Number & Comparable<X>, Y extends Number 
         for (Listener listener : listenerSet) {
             listener.onChartInvalidated();
             listener.onChartVisibleRangeChanged();
-            listener.onChartStateChanged();
+            listener.onChartYValuesStateChanged();
             listener.onChartSelectedIndexChanged();
         }
 

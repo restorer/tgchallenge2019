@@ -54,6 +54,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     private ChartController<X, Y> controller;
     private ChartData<X, Y> chartData;
     private ChartRange<X> xRange;
+    private ChartRange<X> xSnappedRange;
     private ChartRange<Y> yRange;
     private ChartRangeController<Y> yRangeController;
     private ChartLabelsController<X> xLabelsController;
@@ -77,7 +78,9 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     private float xPreviewPanFrom;
     private float xPreviewPanTo;
 
-    private boolean refreshRangeAndLabelsPending;
+    private boolean refreshYRangeAndLabelsPending;
+    @SuppressWarnings("BooleanVariableAlwaysNegated") private boolean forceRefreshYRange;
+    private ChartRange<X> xLastSnappedRange;
 
     private Runnable onUpdatedListener = new Runnable() {
         @Override
@@ -95,7 +98,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         @Override
         public void onChartVisibleRangeChanged() {
             if (!isPreview) {
-                refreshRangeAndLabelsPending = true;
+                refreshYRangeAndLabelsPending = true;
             }
 
             invalidate();
@@ -109,10 +112,9 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         }
 
         @Override
-        public void onChartStateChanged() {
-            if (!isPreview) {
-                refreshRangeAndLabelsPending = true;
-            }
+        public void onChartYValuesStateChanged() {
+            refreshYRangeAndLabelsPending = true;
+            forceRefreshYRange = true;
 
             invalidate();
         }
@@ -161,7 +163,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         previewOverlayPaint.setColor(ContextCompat.getColor(context, R.color.chart__preview_overlay));
     }
 
-    public void setController(boolean preview,
+    public void setController(boolean isPreview,
             @Nullable ChartController<X, Y> controller,
             @Nullable ChartData<X, Y> chartData) {
 
@@ -173,6 +175,8 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         this.chartData = null;
         xRange = null;
         yRange = null;
+        xSnappedRange = null;
+        xLastSnappedRange = null;
 
         if (yRangeController != null) {
             yRangeController.setOnUpdatedListener(null);
@@ -190,9 +194,9 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         }
 
         lineRendererList.clear();
-        this.isPreview = preview;
+        this.isPreview = isPreview;
 
-        strokeWidth = getContext().getResources().getDimensionPixelSize(preview
+        strokeWidth = getContext().getResources().getDimensionPixelSize(isPreview
                 ? R.dimen.chart__preview_stroke
                 : R.dimen.chart__graph_stroke);
 
@@ -204,14 +208,17 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         this.controller = controller;
         this.chartData = chartData;
 
-        xRange = preview ? controller.getXFullRange() : controller.getXVisibleRange();
-        yRange = controller.computeYRange(chartData, xRange);
+        xRange = isPreview ? controller.getXFullRange() : controller.getXVisibleRange();
+        xSnappedRange = isPreview ? xRange : controller.getXSnappedVisibleRange();
+        xLastSnappedRange = new ChartRange<>(xSnappedRange.getFrom(), xSnappedRange.getTo());
+
+        yRange = controller.computeYRange(chartData, xSnappedRange);
         yRangeController = new ChartRangeController<>(yRange, controller.getYTypeDescriptor().getTypeEvaluator());
 
-        if (!preview) {
+        if (!isPreview) {
             xLabelsController = new ChartLabelsController<>(controller.getXLabelsFormatter(),
                     controller.getXLabelsValuesComputer(),
-                    xRange);
+                    xSnappedRange);
 
             yLabelsController = new ChartLabelsController<>(controller.getYLabelsFormatter(),
                     controller.getYLabelsValuesComputer(),
@@ -226,7 +233,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
         controller.addListener(chartListener);
         yRangeController.setOnUpdatedListener(onUpdatedListener);
 
-        if (!preview) {
+        if (!isPreview) {
             xLabelsController.setOnUpdatedListener(onUpdatedListener);
             yLabelsController.setOnUpdatedListener(onUpdatedListener);
         }
@@ -235,13 +242,20 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     }
 
     private void refreshYRangeAndLabels() {
-        ChartRange<Y> newYRange = controller.computeYRange(chartData, xRange);
+        if (!forceRefreshYRange && xLastSnappedRange.equals(xSnappedRange)) {
+            return;
+        }
+
+        ChartRange<Y> newYRange = controller.computeYRange(chartData, xSnappedRange);
         yRangeController.setRange(newYRange, controller.getAnimationDuration());
 
         if (!isPreview) {
-            xLabelsController.updateRange(xRange, controller.getAnimationDuration());
+            xLabelsController.updateRange(xSnappedRange, controller.getAnimationDuration());
             yLabelsController.updateRange(newYRange, controller.getAnimationDuration());
         }
+
+        xLastSnappedRange.setRange(xSnappedRange.getFrom(), xSnappedRange.getTo());
+        forceRefreshYRange = false;
     }
 
     @Override
@@ -269,6 +283,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
 
                 if (isPressed && !isDragging && Math.abs(viewX - xStartPress) > DRAG_THRESHOLD) {
                     isDragging = true;
+                    getParent().requestDisallowInterceptTouchEvent(true);
 
                     if (isPreview) {
                         choosePreviewMode();
@@ -294,6 +309,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             case MotionEvent.ACTION_CANCEL:
                 isPressed = false;
                 isDragging = false;
+                getParent().requestDisallowInterceptTouchEvent(false);
                 break;
         }
 
@@ -448,14 +464,14 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             return;
         }
 
-        if (refreshRangeAndLabelsPending) {
+        if (refreshYRangeAndLabelsPending) {
             refreshYRangeAndLabels();
-            refreshRangeAndLabelsPending = false;
+            refreshYRangeAndLabelsPending = false;
         }
 
         ChartXValues<X> xValues = chartData.getXValues();
 
-        int fromIndex = xValues.computeIndexByValue(xRange.getFrom());
+        int fromIndex = Math.max(0, xValues.computeIndexByValue(xRange.getFrom()) - 1);
         int toIndex = xValues.computeIndexByValue(xRange.getTo());
 
         if (fromIndex >= toIndex) {
@@ -529,7 +545,7 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
 
             canvas.drawText(label.getTitle(),
                     transformX(label.getValue().floatValue()) - labelWidth * 0.5f,
-                    viewBottom,
+                    viewBottom - chartLabelTextPaint.descent(),
                     chartLabelTextPaint);
         }
 

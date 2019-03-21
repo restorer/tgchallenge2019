@@ -25,6 +25,7 @@ import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsValuesCo
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsFormatter;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsValuesComputer;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntRangeSnapper;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartLongRangeSnapper;
 import com.eightsines.tgchallenge2019.feature.chart.widget.ChartGraphView;
 import com.eightsines.tgchallenge2019.feature.util.AppTimeUtils;
 import java.util.ArrayList;
@@ -130,7 +131,8 @@ public class TgChartControlView extends LinearLayout {
                 xLabelsValuesComputer,
                 new ChartIntLabelsFormatter(),
                 new ChartIntLabelsValuesComputer(),
-                new ChartIntRangeSnapper(10),
+                new ChartLongRangeSnapper(AppTimeUtils.DAY_MS, 0L),
+                new ChartIntRangeSnapper(10, 10),
                 VIEW_RANGE_MIN);
 
         controller.getXVisibleRange().setFrom(

@@ -10,10 +10,6 @@ public class ChartIntRangeSnapper implements Consumer<ChartRange<Integer>> {
     private int snap;
     private int offset;
 
-    public ChartIntRangeSnapper(int snap) {
-        this(snap, snap);
-    }
-
     public ChartIntRangeSnapper(int snap, int offset) {
         this.snap = snap;
         this.offset = offset;
@@ -23,7 +19,7 @@ public class ChartIntRangeSnapper implements Consumer<ChartRange<Integer>> {
     public void accept(@NonNull ChartRange<Integer> range) {
         int lower = snapLower(range.getFrom() - offset, snap);
         int last = snapUpper(lower + (range.getTo() + offset - lower) / SUBDIVISIONS * (SUBDIVISIONS - 1), snap);
-        int upper = (last - lower) / (SUBDIVISIONS - 1) * SUBDIVISIONS;
+        int upper = lower + (last - lower) / (SUBDIVISIONS - 1) * SUBDIVISIONS;
 
         range.setRange(lower, upper);
     }
