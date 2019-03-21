@@ -22,12 +22,12 @@ public abstract class ChartValues<T extends Number & Comparable<T>> {
         return values.length;
     }
 
-    public T getEmptyValue() {
-        return emptyValue;
-    }
-
     @NonNull
     public T getValueAtIndex(int index) {
         return (index < 0 || index >= values.length) ? emptyValue : values[index];
+    }
+
+    public T[] getRawValues() {
+        return values;
     }
 }

@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number & Comparable<Y>> extends View {
-    private static final int DRAG_THRESHOLD = 8;
-    private static final int HANDLE_THRESHOLD = 24;
+    private static final int DRAG_THRESHOLD = 16;
 
     private static final int PREVIEW_MODE_NONE = 0;
     private static final int PREVIEW_MODE_FROM = 1;
@@ -342,15 +341,15 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
             return;
         }
 
-        if (xStartPress >= xPreviewFrameFrom - HANDLE_THRESHOLD
-                && xStartPress <= xPreviewFrameFrom + previewFrameHandleWidth + HANDLE_THRESHOLD) {
+        if (xStartPress >= xPreviewFrameFrom - previewFrameHandleWidth * 2
+                && xStartPress <= xPreviewFrameFrom + previewFrameHandleWidth * 3) {
 
             previewMode = PREVIEW_MODE_FROM;
             return;
         }
 
-        if (xStartPress >= xPreviewFrameTo - previewFrameHandleWidth - HANDLE_THRESHOLD
-                && xStartPress <= xPreviewFrameTo + HANDLE_THRESHOLD) {
+        if (xStartPress >= xPreviewFrameTo - previewFrameHandleWidth * 3
+                && xStartPress <= xPreviewFrameTo + previewFrameHandleWidth * 2) {
 
             previewMode = PREVIEW_MODE_TO;
             return;

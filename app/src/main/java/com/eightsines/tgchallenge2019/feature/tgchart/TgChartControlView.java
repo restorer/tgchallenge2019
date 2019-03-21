@@ -29,6 +29,7 @@ import com.eightsines.tgchallenge2019.feature.chart.data.ChartData;
 import com.eightsines.tgchallenge2019.feature.chart.data.ChartYValues;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsFormatter;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartDateLabelsValuesComputer;
+import com.eightsines.tgchallenge2019.feature.chart.util.ChartDecimator;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsFormatter;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntLabelsValuesComputer;
 import com.eightsines.tgchallenge2019.feature.chart.util.ChartIntRangeSnapper;
@@ -43,8 +44,6 @@ import java.util.List;
 import java.util.Locale;
 
 public class TgChartControlView extends LinearLayout {
-    private static final long VIEW_RANGE_MIN = AppTimeUtils.WEEK_MS * 2L;
-    private static final long VIEW_RANGE_INITIAL = AppTimeUtils.ABOUT_MONTH_MS;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EEE, MMM d", Locale.US);
 
     private TextView titleView;
@@ -239,6 +238,7 @@ public class TgChartControlView extends LinearLayout {
         textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
     }
 
+    @SuppressWarnings("MagicNumber")
     public void setChartData(@NonNull String title, @NonNull ChartData<Long, Integer> chartData) {
         if (controller != null) {
             controller.removeListener(chartListener);
@@ -259,6 +259,10 @@ public class TgChartControlView extends LinearLayout {
 
         ChartDateLabelsValuesComputer xLabelsValuesComputer = new ChartDateLabelsValuesComputer();
 
+        long xRangeLength = chartData.getXFullRange().getTo() - chartData.getXFullRange().getFrom();
+        long xMinRangeLength = xRangeLength / 8;
+        long xInitialRangeLength = xRangeLength / 4;
+
         controller = new ChartController<>(chartData,
                 new ChartDateLabelsFormatter(xLabelsValuesComputer),
                 xLabelsValuesComputer,
@@ -266,14 +270,13 @@ public class TgChartControlView extends LinearLayout {
                 new ChartIntLabelsValuesComputer(),
                 new ChartLongRangeSnapper(AppTimeUtils.DAY_MS, 0L),
                 new ChartIntRangeSnapper(10, 10),
-                VIEW_RANGE_MIN);
+                xMinRangeLength);
 
-        controller.getXVisibleRange().setFrom(
-                Math.max(controller.getXFullRange().getFrom(),
-                        controller.getXFullRange().getTo() - VIEW_RANGE_INITIAL));
-
+        controller.getXVisibleRange().setFrom(controller.getXFullRange().getTo() - xInitialRangeLength);
         graphView.setController(false, controller, chartData);
-        previewView.setController(true, controller, chartData);
+
+        ChartData<Long, Integer> previewChartData = ChartDecimator.decimate(chartData, 0.1f);
+        previewView.setController(true, controller, previewChartData);
 
         for (int position = 0, count = chartData.getYValuesList().size(); position < count; position++) {
             appendDynamicViews(position);
