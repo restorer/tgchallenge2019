@@ -568,6 +568,12 @@ public class ChartGraphView<X extends Number & Comparable<X>, Y extends Number &
     @SuppressWarnings("MagicNumber")
     private void renderChartLabels(@NonNull Canvas canvas) {
         for (ChartLabelsController<X>.Label label : xLabelsController.getLabels()) {
+            if (label.getValue().compareTo(controller.getXFullRange().getFrom()) < 0
+                    || label.getValue().compareTo(controller.getXFullRange().getTo()) > 0) {
+
+                continue;
+            }
+
             float labelWidth = chartLabelTextPaint.measureText(label.getTitle());
             chartLabelTextPaint.setAlpha(label.getIntAlpha());
 

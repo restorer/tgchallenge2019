@@ -25,7 +25,7 @@ public class ChartIntRangeSnapper implements Consumer<ChartRange<Integer>> {
     }
 
     private static int snapLower(int value, int snap) {
-        return ((value - snap + 1) / snap) * snap;
+        return (value / snap) * snap;
     }
 
     private static int snapUpper(int value, int snap) {

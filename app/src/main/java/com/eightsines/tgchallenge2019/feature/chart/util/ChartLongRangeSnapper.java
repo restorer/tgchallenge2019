@@ -19,7 +19,7 @@ public class ChartLongRangeSnapper implements Consumer<ChartRange<Long>> {
     }
 
     private static long snapLower(long value, long snap) {
-        return ((value - snap + 1L) / snap) * snap;
+        return (value / snap) * snap;
     }
 
     private static long snapUpper(long value, long snap) {

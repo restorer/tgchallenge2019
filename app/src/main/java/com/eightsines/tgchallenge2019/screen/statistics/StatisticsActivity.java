@@ -43,6 +43,7 @@ public class StatisticsActivity extends AppCompatActivity {
         List<ChartData<Long, Integer>> charts = getCharts();
 
         for (int index = 0, length = charts.size(); index < length; index++) {
+            // List/Recycler view will be better, but I'm too lazy to do it for demo app.
             appendTgChartView(index, charts.get(index));
         }
     }
