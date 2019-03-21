@@ -11,7 +11,7 @@
     <color name="chart__info_title">#222222</color>
     <color name="chart__axis_line">#F1F1F2</color>
     <color name="chart__label_text">#96A2AA</color>
-    <color name="chart__preview_frame">#34517DA2</color> <!-- 20% opacity -->
-    <color name="chart__preview_overlay">#4DDBE7F0</color> <!-- 30% opacity -->
+    <color name="chart__preview_frame">#7FB7CfE1</color> <!-- 50% opacity -->
+    <color name="chart__preview_overlay">#CCF3F6F7</color> <!-- 80% opacity -->
     <color name="chart__controls_separator">#E0E0E0</color>
 </resources>
